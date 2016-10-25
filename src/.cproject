@@ -27,53 +27,55 @@
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.PE" id="com.renesas.cdt.rxc.debug.win32.targetPlatform.Id.215788009" isAbstract="false" osList="win32" superClass="com.renesas.cdt.rxc.debug.win32.targetPlatform.Id"/>
 							<builder buildPath="${workspace_loc:/kit12_rx62t/Debug}" id="com.renesas.cdt.rxc.debug.win32.builder.Id.795882981" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SHC Make Builder" superClass="com.renesas.cdt.rxc.debug.win32.builder.Id"/>
 							<tool id="com.renesas.cdt.rxc.debug.win32.tool.compiler.Id.748648007" name="Compiler" superClass="com.renesas.cdt.rxc.debug.win32.tool.compiler.Id">
-								<option id="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo.1806390909" superClass="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.cpuType.728442533" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.cpuType" value="RX600" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.endian.1849912782" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.roundTo.995452285" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.roundTo" value="Nearest" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.allocLowerBit.1229300059" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.allocLowerBit" value="Lower bit" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.widthDivergence.1764222097" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.widthDivergence" value="24 bit" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Compiler.option.UserDef.1020283637" superClass="com.renesas.cdt.renesas.Compiler.option.UserDef" valueType="stringList">
+								<option defaultValue="true" id="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo.1806390909" name="Generate debug information" superClass="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.cpuType.728442533" name="CPU type" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.cpuType" value="RX600" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.endian.1849912782" name="Data Endian" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.roundTo.995452285" name="Round to" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.roundTo" value="Nearest" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.allocLowerBit.1229300059" name="Allocate from lower bit" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.allocLowerBit" value="Lower bit" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Debug.Compiler.option.widthDivergence.1764222097" name="Width of divergence of function" superClass="com.renesas.cdt.rxc.Debug.Compiler.option.widthDivergence" value="24 bit" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Compiler.option.UserDef.1020283637" name="User-defined options" superClass="com.renesas.cdt.renesas.Compiler.option.UserDef" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 									<listOptionValue builtIn="false" value="-section=L=C"/>
 								</option>
-								<option id="com.renesas.cdt.renesas.Compiler.option.incFileDirectories.365368819" superClass="com.renesas.cdt.renesas.Compiler.option.incFileDirectories" valueType="includePath">
+								<option id="com.renesas.cdt.renesas.Compiler.option.incFileDirectories.365368819" name="Include file directories" superClass="com.renesas.cdt.renesas.Compiler.option.incFileDirectories" valueType="includePath">
 									<listOptionValue builtIn="false" value="${TCINSTALL}\include"/>
 								</option>
+								<option id="com.renesas.cdt.renesas.Compiler.option.C.1585374679" superClass="com.renesas.cdt.renesas.Compiler.option.C" value="com.renesas.cdt.renesas.Compiler.option.C99" valueType="enumerated"/>
 								<inputType id="%Base.Compiler.Shc.C.Input.Id.1077372903" name="C Input" superClass="%Base.Compiler.Shc.C.Input.Id"/>
 							</tool>
 							<tool id="com.renesas.cdt.rxc.debug.win32.tool.assembler.Id.1176570340" name="Assembler" superClass="com.renesas.cdt.rxc.debug.win32.tool.assembler.Id">
-								<option id="com.renesas.cdt.rxc.Debug.Assembler.option.debugInformation.827349880" superClass="com.renesas.cdt.rxc.Debug.Assembler.option.debugInformation" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.rxc.Debug.Assembler.option.endian.68603350" superClass="com.renesas.cdt.rxc.Debug.Assembler.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Assembler.option.userDefine.1062285168" superClass="com.renesas.cdt.renesas.Assembler.option.userDefine" valueType="stringList">
+								<option id="com.renesas.cdt.rxc.Debug.Assembler.option.debugInformation.827349880" name="Generate debug information" superClass="com.renesas.cdt.rxc.Debug.Assembler.option.debugInformation" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.rxc.Debug.Assembler.option.endian.68603350" name="Data Endian" superClass="com.renesas.cdt.rxc.Debug.Assembler.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Assembler.option.userDefine.1062285168" name="User-defined options" superClass="com.renesas.cdt.renesas.Assembler.option.userDefine" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 								</option>
 								<inputType id="%Base.Assembler.shcInputType.Id.2018127777" name="Assembler InputType" superClass="%Base.Assembler.shcInputType.Id"/>
 							</tool>
 							<tool id="com.renesas.cdt.rxc.debug.win32.tool.linker.Id.2027629188" name="Linker" superClass="com.renesas.cdt.rxc.debug.win32.tool.linker.Id">
-								<option id="com.renesas.cdt.renesas.Linker.option.generateListFile.945911822" superClass="com.renesas.cdt.renesas.Linker.option.generateListFile" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.prelinkerControl.1909159487" superClass="com.renesas.cdt.renesas.Linker.option.prelinkerControl" value="Skip prelinker" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption.623782338" superClass="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption" value="Stype via absolute" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.userDefined.1083816818" superClass="com.renesas.cdt.renesas.Linker.option.userDefined" valueType="stringList">
+								<option id="com.renesas.cdt.renesas.Linker.option.generateListFile.945911822" name="Generate list file" superClass="com.renesas.cdt.renesas.Linker.option.generateListFile" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.prelinkerControl.1909159487" name="Prelinker control" superClass="com.renesas.cdt.renesas.Linker.option.prelinkerControl" value="Skip prelinker" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption.623782338" name="" superClass="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption" value="Stype via absolute" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.userDefined.1083816818" name="User-defined options" superClass="com.renesas.cdt.renesas.Linker.option.userDefined" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 									<listOptionValue builtIn="false" value="-nomessage"/>
 									<listOptionValue builtIn="false" value="-rom=D=R,D_1=R_1,D_2=R_2"/>
 								</option>
-								<option id="com.renesas.cdt.renesas.Linker.option.debugInformation.205787744" superClass="com.renesas.cdt.renesas.Linker.option.debugInformation" value="In output load module" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.debugInformation.205787744" name="Debug information" superClass="com.renesas.cdt.renesas.Linker.option.debugInformation" value="In output load module" valueType="enumerated"/>
 							</tool>
 							<tool command="lbgrx" id="%com.renesas.cdt.rxc.debug.win32.tool.libgen.Id.2080643441" name="Standard Library" superClass="%com.renesas.cdt.rxc.debug.win32.tool.libgen.Id">
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mathc89.562447450" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mathc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89.1238839056" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89.839474052" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stringc89.161638140" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stringc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP.520555024" superClass="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.rxc.Debug.StandardLibrary.option.endian.938705490" superClass="com.renesas.cdt.rxc.Debug.StandardLibrary.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mode.1866381116" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mode" value="Build the library (only when options have been changed)" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.userSpecifiedLibrary.798797558" superClass="com.renesas.cdt.renesas.StandardLibrary.option.userSpecifiedLibrary" value="${CONFIGDIR}\kit12_rx62t.lib" valueType="string"/>
-								<option id="com.renesas.cdt.rxc.Debug.StandardLibrary.option.optimizationType.517407933" superClass="com.renesas.cdt.rxc.Debug.StandardLibrary.option.optimizationType" value="Optimize for size" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.UserDef.1889688214" superClass="com.renesas.cdt.renesas.StandardLibrary.option.UserDef" valueType="stringList">
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mathc89.562447450" name="math.h (C89/C99): Mathematical/trigonometric operations (double-precision)" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mathc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89.1238839056" name="stdio.h (C89/C99): Input/Output" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89.839474052" name="stdlib.h (C89/C99): General purpose library features" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stringc89.161638140" name="string.h (C89/C99): String handling operations" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stringc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP.520555024" name="new (EC++): Memory allocation and deallocation routines" superClass="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.rxc.Debug.StandardLibrary.option.endian.938705490" name="Data Endian" superClass="com.renesas.cdt.rxc.Debug.StandardLibrary.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mode.1866381116" name="Mode" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mode" value="Build the library (only when options have been changed)" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.userSpecifiedLibrary.798797558" name="User-specified library file" superClass="com.renesas.cdt.renesas.StandardLibrary.option.userSpecifiedLibrary" value="${CONFIGDIR}\kit12_rx62t.lib" valueType="string"/>
+								<option id="com.renesas.cdt.rxc.Debug.StandardLibrary.option.optimizationType.517407933" name="Optimization type" superClass="com.renesas.cdt.rxc.Debug.StandardLibrary.option.optimizationType" value="Optimize for size" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.UserDef.1889688214" name="User-defined options" superClass="com.renesas.cdt.renesas.StandardLibrary.option.UserDef" valueType="stringList">
 									<listOptionValue builtIn="false" value="-section=L=C"/>
 								</option>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration.1343311363" superClass="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration" value="C99" valueType="enumerated"/>
 							</tool>
 							<tool id="com.renesas.cdt.rxc.debug.win32.tool.convertor.Id.493353398" name="Converter" superClass="com.renesas.cdt.rxc.debug.win32.tool.convertor.Id"/>
 						</toolChain>
@@ -199,6 +201,7 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.pathentry"/>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 		</cconfiguration>
 		<cconfiguration id="com.renesas.cdt.rxc.release.win32.configuration.Id.1119268462">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.renesas.cdt.rxc.release.win32.configuration.Id.1119268462" moduleId="org.eclipse.cdt.core.settings" name="Release">
@@ -224,48 +227,48 @@
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF;org.eclipse.cdt.core.PE" id="com.renesas.cdt.rxc.release.win32.targetPlatform.IdId.581950987" osList="win32" superClass="com.renesas.cdt.rxc.release.win32.targetPlatform.IdId"/>
 							<builder buildPath="${workspace_loc:/kit12_rx62t/Release}" id="com.renesas.cdt.rxc.release.win32.builder.Id.202502181" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="SHC Make Builder" superClass="com.renesas.cdt.rxc.release.win32.builder.Id"/>
 							<tool id="com.renesas.cdt.rxc.release.win32.tool.compiler.Id.853041977" name="Compiler" superClass="com.renesas.cdt.rxc.release.win32.tool.compiler.Id">
-								<option id="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo.1974726374" superClass="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo" value="false" valueType="boolean"/>
-								<option id="com.renesas.cdt.rxc.Release.Compiler.option.cpuType.45961987" superClass="com.renesas.cdt.rxc.Release.Compiler.option.cpuType" value="RX600" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Release.Compiler.option.endian.248280161" superClass="com.renesas.cdt.rxc.Release.Compiler.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Release.Compiler.option.roundTo.1710312164" superClass="com.renesas.cdt.rxc.Release.Compiler.option.roundTo" value="Nearest" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Release.Compiler.option.allocLowerBit.1096641743" superClass="com.renesas.cdt.rxc.Release.Compiler.option.allocLowerBit" value="Lower bit" valueType="enumerated"/>
-								<option id="com.renesas.cdt.rxc.Release.Compiler.option.widthDivergence.972656068" superClass="com.renesas.cdt.rxc.Release.Compiler.option.widthDivergence" value="24 bit" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Compiler.option.UserDef.1305835229" superClass="com.renesas.cdt.renesas.Compiler.option.UserDef" valueType="stringList">
+								<option id="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo.1974726374" name="Generate debug information" superClass="com.renesas.cdt.renesas.Compiler.option.GenDebugInfo" value="false" valueType="boolean"/>
+								<option id="com.renesas.cdt.rxc.Release.Compiler.option.cpuType.45961987" name="CPU type" superClass="com.renesas.cdt.rxc.Release.Compiler.option.cpuType" value="RX600" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Release.Compiler.option.endian.248280161" name="Data Endian" superClass="com.renesas.cdt.rxc.Release.Compiler.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Release.Compiler.option.roundTo.1710312164" name="Round to" superClass="com.renesas.cdt.rxc.Release.Compiler.option.roundTo" value="Nearest" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Release.Compiler.option.allocLowerBit.1096641743" name="Allocate from lower bit" superClass="com.renesas.cdt.rxc.Release.Compiler.option.allocLowerBit" value="Lower bit" valueType="enumerated"/>
+								<option id="com.renesas.cdt.rxc.Release.Compiler.option.widthDivergence.972656068" name="Width of divergence of function" superClass="com.renesas.cdt.rxc.Release.Compiler.option.widthDivergence" value="24 bit" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Compiler.option.UserDef.1305835229" name="User-defined options" superClass="com.renesas.cdt.renesas.Compiler.option.UserDef" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 									<listOptionValue builtIn="false" value="-section=L=C"/>
 								</option>
-								<option id="com.renesas.cdt.renesas.Compiler.option.incFileDirectories.920356762" superClass="com.renesas.cdt.renesas.Compiler.option.incFileDirectories" valueType="includePath">
+								<option id="com.renesas.cdt.renesas.Compiler.option.incFileDirectories.920356762" name="Include file directories" superClass="com.renesas.cdt.renesas.Compiler.option.incFileDirectories" valueType="includePath">
 									<listOptionValue builtIn="false" value="${TCINSTALL}\include"/>
 								</option>
 								<inputType id="%Base.Compiler.Shc.C.Input.Id.1292283160" name="C Input" superClass="%Base.Compiler.Shc.C.Input.Id"/>
 							</tool>
 							<tool id="%com.renesas.cdt.rxc.release.win32.tool.assembler.Id.134106491" name="Assembler" superClass="%com.renesas.cdt.rxc.release.win32.tool.assembler.Id">
-								<option id="com.renesas.cdt.rxc.Release.Assembler.option.endian.25243454" superClass="com.renesas.cdt.rxc.Release.Assembler.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Assembler.option.userDefine.1424762832" superClass="com.renesas.cdt.renesas.Assembler.option.userDefine" valueType="stringList">
+								<option id="com.renesas.cdt.rxc.Release.Assembler.option.endian.25243454" name="Data Endian" superClass="com.renesas.cdt.rxc.Release.Assembler.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Assembler.option.userDefine.1424762832" name="User-defined options" superClass="com.renesas.cdt.renesas.Assembler.option.userDefine" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 								</option>
 								<inputType id="%Base.Assembler.shcInputType.Id.585830815" name="Assembler InputType" superClass="%Base.Assembler.shcInputType.Id"/>
 							</tool>
 							<tool id="com.renesas.cdt.rxc.release.win32.tool.linker.Id.1922061866" name="Linker" superClass="com.renesas.cdt.rxc.release.win32.tool.linker.Id">
-								<option id="com.renesas.cdt.renesas.Linker.option.generateListFile.324504702" superClass="com.renesas.cdt.renesas.Linker.option.generateListFile" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.debugInformation.1090385480" superClass="com.renesas.cdt.renesas.Linker.option.debugInformation" value="None" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption.1442456248" superClass="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption" value="Stype via absolute" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.Linker.option.userDefined.1142107349" superClass="com.renesas.cdt.renesas.Linker.option.userDefined" valueType="stringList">
+								<option id="com.renesas.cdt.renesas.Linker.option.generateListFile.324504702" name="Generate list file" superClass="com.renesas.cdt.renesas.Linker.option.generateListFile" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.debugInformation.1090385480" name="Debug information" superClass="com.renesas.cdt.renesas.Linker.option.debugInformation" value="None" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption.1442456248" name="" superClass="com.renesas.cdt.renesas.Linker.option.typeOfOutputFileOption" value="Stype via absolute" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.Linker.option.userDefined.1142107349" name="User-defined options" superClass="com.renesas.cdt.renesas.Linker.option.userDefined" valueType="stringList">
 									<listOptionValue builtIn="false" value="-nologo"/>
 									<listOptionValue builtIn="false" value="-nomessage"/>
 									<listOptionValue builtIn="false" value="-rom=D=R,D_1=R_1,D_2=R_2"/>
 								</option>
 							</tool>
 							<tool command="lbgrx" id="%com.renesas.cdt.rxc.release.win32.tool.libgen.Id.1625815426" name="Standard Library" superClass="%com.renesas.cdt.rxc.release.win32.tool.libgen.Id">
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mathc89.788638098" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mathc89" value="false" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89.1946879043" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89.1856998277" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stringc89.1055231825" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stringc89" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP.1089444365" superClass="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP" value="true" valueType="boolean"/>
-								<option id="com.renesas.cdt.rxc.Release.StandardLibrary.option.endian.1269794220" superClass="com.renesas.cdt.rxc.Release.StandardLibrary.option.endian" value="Big-endian data" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration.139924136" superClass="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration" value="C(C89)" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mode.829048242" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mode" value="Build the library (only when options have been changed)" valueType="enumerated"/>
-								<option id="com.renesas.cdt.renesas.StandardLibrary.option.UserDef.124294774" superClass="com.renesas.cdt.renesas.StandardLibrary.option.UserDef" valueType="stringList">
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mathc89.788638098" name="math.h (C89/C99): Mathematical/trigonometric operations (double-precision)" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mathc89" value="false" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89.1946879043" name="stdio.h (C89/C99): Input/Output" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdioc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89.1856998277" name="stdlib.h (C89/C99): General purpose library features" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stdlibc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.stringc89.1055231825" name="string.h (C89/C99): String handling operations" superClass="com.renesas.cdt.renesas.StandardLibrary.option.stringc89" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP.1089444365" name="new (EC++): Memory allocation and deallocation routines" superClass="com.renesas.cdt.renesas.StandardLibrary.option.rxcnewCPP" value="true" valueType="boolean"/>
+								<option id="com.renesas.cdt.rxc.Release.StandardLibrary.option.endian.1269794220" name="Data Endian" superClass="com.renesas.cdt.rxc.Release.StandardLibrary.option.endian" value="Big-endian data" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration.139924136" name="Library configuration" superClass="com.renesas.cdt.renesas.StandardLibrary.option.libConfiguration" value="C(C89)" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.mode.829048242" name="Mode" superClass="com.renesas.cdt.renesas.StandardLibrary.option.mode" value="Build the library (only when options have been changed)" valueType="enumerated"/>
+								<option id="com.renesas.cdt.renesas.StandardLibrary.option.UserDef.124294774" name="User-defined options" superClass="com.renesas.cdt.renesas.StandardLibrary.option.UserDef" valueType="stringList">
 									<listOptionValue builtIn="false" value="-section=L=C"/>
 								</option>
 							</tool>
@@ -393,6 +396,7 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.pathentry"/>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+			<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 		</cconfiguration>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
