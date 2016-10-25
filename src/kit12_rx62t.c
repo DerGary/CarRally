@@ -143,7 +143,6 @@ void main(void)
             break;
 
         case 11:
-        	cnt2++;
             /* Normal trace */
             if( check_crossline() ) {   /* Cross line check            */
             	cnt2 = 0;
@@ -490,7 +489,7 @@ void main(void)
     }
 }
 
-int getStearing(int sensorResult) {
+int getSteering(int sensorResult) {
 	switch(sensorResult) {
 		case 0x04: return 1;
 		case 0x06: return 2;
@@ -515,11 +514,13 @@ int abs(int i) {
 }
 
 void traceTrack() {
-	int stearing;
+	int steering;
 	int fasterSpeed;
 	int slowerSpeed;
 	int motorSpeedLeft;
 	int motorSpeedRight;
+
+	led_out(0x1);
 
 	int sensorResult = sensor_inp(MASK3_3);
 	int sensorResultAll = sensor_inp(MASK4_4);
@@ -533,15 +534,18 @@ void traceTrack() {
 	if (sensorResult == 0 || (cnt2 < 333 && currentSensorResult == sensorResult)) {
 		return;
 	}
+
 	cnt2 = 0;
+	led_out(0x2);
+
 	currentSensorResult = sensorResult;
 
-	stearing = getStearing(sensorResult);
+	steering = getSteering(sensorResult);
 
-	currentAngle += stearing * 5;
+	currentAngle += steering * 5;
 
 	if (currentAngle > 30) currentAngle = 30;
-	else if (currentAngle < -30) currentAngle = 30;
+	else if (currentAngle < -30) currentAngle = -30;
 
 	fasterSpeed = 100 - abs(currentAngle) * 2;
 	slowerSpeed = fasterSpeed - (fasterSpeed * abs(currentAngle));
