@@ -17,6 +17,8 @@ This program supports the following boards:
 /* Include                              */
 /*======================================*/
 #include "iodefine.h"
+#include "stdlib.h"
+#include "math.h"
 
 /*======================================*/
 /* Symbol definitions                   */
@@ -54,7 +56,9 @@ unsigned char pushsw_get( void );
 void led_out_m( unsigned char led );
 void led_out( unsigned char led );
 void motor( int accele_l, int accele_r );
+void motorf( float accele_l, float accele_r );
 void handle( int angle );
+void handlef( float angle );
 void traceTrack();
 
 /*======================================*/
@@ -65,7 +69,9 @@ unsigned long   cnt1;
 unsigned long	cnt2;
 int             pattern;
 
-int currentAngle;
+int ledState;
+
+float currentAngle;
 int currentSensorResult;
 int lastSteeringAdjust;
 
@@ -82,6 +88,8 @@ void main(void)
     /* Initialize MCU functions */
     init();
 
+    ledState = 0;
+
     /* Initialize micom car state */
     handle( 0 );
     motor( 0, 0 );
@@ -90,7 +98,7 @@ void main(void)
     	// If all sensors are off -> emergency exit
     	// TODO: Fix for lane change
     	if (!sensor_inp(MASK4_4)) {
-    		handle(0);
+    		//handle(0);
     		motor(0, 0);
     		cnt2 = 0;
     		pattern = 0;
@@ -143,6 +151,7 @@ void main(void)
             if( !startbar_get() ) {
                 /* Start!! */
                 led_out( 0x0 );
+                motor(100, 100);
                 pattern = 11;
                 cnt1 = 0;
                 break;
@@ -511,68 +520,71 @@ void main(void)
     }
 }
 
-int getSteering(int sensorResult) {
+int iroundf(float f) {
+	return f < 0 ? (int)(f - 0.5f) : (int)(f + 0.5f);
+}
+
+float absf(float f) {
+	return f < 0 ? -f : f;
+}
+
+float getSteeringAngle(int sensorResult) {
+	float baseSteering;
 	switch(sensorResult) {
-		case 0x04: return 1;
-		case 0x06: return 2;
-		case 0x07: return 3;
-		case 0x02: return 4;
-		case 0x03: return 5;
-		case 0x01: return 6;
+		case 0x04: baseSteering = 1; break;
+		case 0x06: baseSteering = 2; break;
+		case 0x07: baseSteering = 3; break;
+		case 0x02: baseSteering = 4; break;
+		case 0x03: baseSteering = 5; break;
+		case 0x01: baseSteering = 6; break;
 
-		case 0x20: return -1;
-		case 0x60: return -2;
-		case 0xe0: return -3;
-		case 0x40: return -4;
-		case 0xc0: return -5;
-		case 0x80: return -6;
+		case 0x20: baseSteering = -1; break;
+		case 0x60: baseSteering = -2; break;
+		case 0xe0: baseSteering = -3; break;
+		case 0x40: baseSteering = -4; break;
+		case 0xc0: baseSteering = -5; break;
+		case 0x80: baseSteering = -6; break;
 
-		default: return 0;
+		default: baseSteering = 0; break;
 	}
+
+	float factor = 0.0f;
+	if (baseSteering != 0) {
+		factor = baseSteering > 0 ? 1.0f : -1.0f;
+	}
+
+	float steering = baseSteering * 0.1;
+
+	return steering;
 }
 
-int abs(int i) {
-	return i < 0 ? -i : i;
-}
-
+#define CHECK_RATE 20
 void traceTrack() {
-	int steering;
-	int fasterSpeed;
-	int slowerSpeed;
-	int motorSpeedLeft;
-	int motorSpeedRight;
-
-	led_out(0x1);
+    //led_out(ledState);
 
 	int sensorResult = sensor_inp(MASK3_3);
-	int sensorResultAll = sensor_inp(MASK4_4);
-	if (sensorResultAll == 0) {
-		handle(0);
-		motor(0, 0);
-		cnt2 = 0;
-		pattern = 0;
+	if (sensorResult == 0 || (cnt2 < CHECK_RATE && currentSensorResult == sensorResult)) {
 		return;
 	}
-	if (sensorResult == 0 || (cnt2 < 333 && currentSensorResult == sensorResult)) {
-		return;
-	}
-
 	cnt2 = 0;
-	led_out(0x2);
 
 	currentSensorResult = sensorResult;
 
-	steering = getSteering(sensorResult);
+	float steering = CHECK_RATE*getSteeringAngle(sensorResult);
 
-	currentAngle += steering * 5;
+	float handleAngle = currentAngle + steering;
 
-	if (currentAngle > 30) currentAngle = 30;
-	else if (currentAngle < -30) currentAngle = -30;
+	//if (handleAngle > 30) handleAngle = 30;
+	//else if (handleAngle < -30) handleAngle = -30;
 
-	fasterSpeed = 100 - abs(currentAngle) * 2;
-	slowerSpeed = fasterSpeed - (fasterSpeed * abs(currentAngle));
+	float angleFactor = absf(handleAngle) / 45.0f;
 
-	if (currentAngle < 0) {
+	float fasterSpeed = 1.0f - angleFactor * 0.3f;
+	float slowerSpeed = fasterSpeed - (fasterSpeed * angleFactor);
+
+	float motorSpeedLeft;
+	float motorSpeedRight;
+	if (handleAngle < 0) {
 		motorSpeedRight = fasterSpeed;
 		motorSpeedLeft = slowerSpeed;
 	} else {
@@ -580,8 +592,11 @@ void traceTrack() {
 		motorSpeedLeft = fasterSpeed;
 	}
 
-	handle(currentAngle);
-	motor(motorSpeedLeft, motorSpeedRight);
+	//float handleAngle = (float)((roundf(currentAngle) + 1) % 15);
+
+	handlef(handleAngle);
+	motorf(motorSpeedLeft, motorSpeedRight);
+	//motorf(1.0f, 1.0f);
 }
 
 /***********************************************************************/
@@ -864,6 +879,11 @@ void motor( int accele_l, int accele_r )
     }
 }
 
+void motorf( float accele_l, float accele_r)
+{
+	motor(iroundf(accele_l*100.0f), iroundf(accele_r*100.0f));
+}
+
 /***********************************************************************/
 /* Servo steering operation                                            */
 /* Arguments:   servo operation angle: -90 to 90                       */
@@ -874,6 +894,16 @@ void handle( int angle )
 {
     /* When the servo move from left to right in reverse, replace "-" with "+". */
     MTU3.TGRD = SERVO_CENTER - angle * HANDLE_STEP;
+
+    currentAngle = (float)angle;
+}
+
+void handlef( float angle )
+{
+    /* When the servo move from left to right in reverse, replace "-" with "+". */
+    MTU3.TGRD = SERVO_CENTER - iroundf(angle * HANDLE_STEP);
+
+    currentAngle = angle;
 }
 
 /***********************************************************************/
