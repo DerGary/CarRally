@@ -87,6 +87,15 @@ void main(void)
     motor( 0, 0 );
 
     while( 1 ) {
+    	// If all sensors are off -> emergency exit
+    	// TODO: Fix for lane change
+    	if (!sensor_inp(MASK4_4)) {
+    		handle(0);
+    		motor(0, 0);
+    		cnt2 = 0;
+    		pattern = 0;
+    	}
+
         switch( pattern ) {
 
         /****************************************************************
