@@ -69,6 +69,11 @@ int currentAngle;
 int currentSensorResult;
 int lastSteeringAdjust;
 
+/* 90° Turn Counter */
+unsigned char sharpTurnCounter = 0;
+#define TOTAL_SHARP_TURNS 6
+#define NUM_SHARP_TURN (sharpTurnCounter % (TOTAL_SHARP_TURNS + 1))
+
 /***********************************************************************/
 /* Main program                                                        */
 /***********************************************************************/
@@ -82,6 +87,15 @@ void main(void)
     motor( 0, 0 );
 
     while( 1 ) {
+    	// If all sensors are off -> emergency exit
+    	// TODO: Fix for lane change
+    	if (!sensor_inp(MASK4_4)) {
+    		handle(0);
+    		motor(0, 0);
+    		cnt2 = 0;
+    		pattern = 0;
+    	}
+
         switch( pattern ) {
 
         /****************************************************************
@@ -262,12 +276,20 @@ void main(void)
             break;
 
         case 21:
-            /* Processing at 1st cross line */
+        	/* Processing at 1st cross line */
+        	// TODO:
+        	// Evaluate sharp turn counter and slow down
+        	// according to distance from crossline to turn
+
+            // Center handle and turn off motors
             led_out( 0x3 );
             handle( 0 );
             motor( 0 ,0 );
             pattern = 22;
             cnt1 = 0;
+
+            // Count sharp turn
+            sharpTurnCounter++;
             break;
 
         case 22:
