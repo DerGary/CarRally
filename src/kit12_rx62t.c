@@ -1,5 +1,5 @@
 /***********************************************************************/
-/*  Supported Microcontroller:RX62T                                    */
+ /*  Supported Microcontroller:RX62T                                    */
 /*  File:                   kit12_rx62t.c                              */
 /*  File Contents:          MCU Car Trace Basic Program(RX62T version) */
 /*  Version number:         Ver.1.00                                   */
@@ -26,7 +26,9 @@ This program supports the following boards:
 
 /* Constant settings */
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
-#define SERVO_CENTER    2300            /* Servo center value          */
+//4 = 2370
+//1 = 2284
+#define SERVO_CENTER    2284            /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
@@ -58,8 +60,10 @@ void led_out( unsigned char led );
 void motor( int accele_l, int accele_r );
 void motorf( float accele_l, float accele_r );
 void handle( int angle );
+void handlei( int angle );
 void handlef( float angle );
 void traceTrack();
+void steeringTest();
 
 /*======================================*/
 /* Global variable declarations         */
@@ -71,7 +75,7 @@ int             pattern;
 
 int ledState;
 
-float currentAngle;
+int currentAngle;
 int currentSensorResult;
 int lastSteeringAdjust;
 
@@ -527,59 +531,74 @@ int iroundf(float f) {
 float absf(float f) {
 	return f < 0 ? -f : f;
 }
-
-float getSteeringAngle(int sensorResult) {
+int getSteeringAngle(int sensorResult) {
 	float baseSteering;
 	switch(sensorResult) {
-		case 0x04: baseSteering = 1; break;
-		case 0x06: baseSteering = 2; break;
-		case 0x07: baseSteering = 3; break;
-		case 0x02: baseSteering = 4; break;
-		case 0x03: baseSteering = 5; break;
-		case 0x01: baseSteering = 6; break;
 
-		case 0x20: baseSteering = -1; break;
-		case 0x60: baseSteering = -2; break;
-		case 0xe0: baseSteering = -3; break;
-		case 0x40: baseSteering = -4; break;
-		case 0xc0: baseSteering = -5; break;
-		case 0x80: baseSteering = -6; break;
+		case 0x38: baseSteering = -3.28f; break; //0b0011 1000
+		case 0x1c: baseSteering = 3.28f; break; //0b0001 1100
 
-		default: baseSteering = 0; break;
+		case 0x08: baseSteering = 3.28f; break; //0b0000 1000
+		case 0x04: baseSteering = 9.77f; break; //0b0000 0100
+		case 0x02: baseSteering = 16.02f; break; //0b0000 0010
+		case 0x01: baseSteering = 21.90f; break; //0b0000 0001
+
+		case 0x0C: baseSteering = 6.55f; break; //0b0000 1100
+		case 0x06: baseSteering = 12.94f; break; //0b0000 0110
+		case 0x03: baseSteering = 19.01f; break; //0b0000 0011
+
+		case 0x0e: baseSteering = 9.77f; break; //0b0000 1110
+		case 0x07: baseSteering = 16.02f; break; //0b0000 0111
+
+		case 0x0f: baseSteering = 12.94f; break; //0b0000 1111
+
+
+		case 0x10: baseSteering = -3.28f; break; //0b0001 0000
+		case 0x20: baseSteering = -9.77f; break; //0b0010 0000
+		case 0x40: baseSteering = -16.02f; break; //0b0100 0000
+		case 0x80: baseSteering = -21.90f; break; //0b1000 0000
+
+		case 0x30: baseSteering = -6.55f;  break; //0b0011 0000
+		case 0x60: baseSteering = -12.94f; break; //0b0110 0000
+		case 0xc0: baseSteering = -19.01f; break; //0b1100 0000
+
+		case 0x70: baseSteering = -9.77f;  break; //0b0111 0000
+		case 0xe0: baseSteering = -16.02f; break; //0b1110 0000
+
+		case 0xf0: baseSteering = -12.94f; break; //0b1111 0000
+
+		//0b0001 1000
+		default: baseSteering = 0.0f; break;
 	}
-
-	float factor = 0.0f;
-	if (baseSteering != 0) {
-		factor = baseSteering > 0 ? 1.0f : -1.0f;
-	}
-
-	float steering = baseSteering * 0.1;
-
-	return steering;
+	return roundf(baseSteering*13);
 }
 
-#define CHECK_RATE 20
+int waitForSteering = 0;
+
 void traceTrack() {
     //led_out(ledState);
 
-	int sensorResult = sensor_inp(MASK3_3);
-	if (sensorResult == 0 || (cnt2 < CHECK_RATE && currentSensorResult == sensorResult)) {
+	int sensorResult = sensor_inp(MASK4_4);
+	if (currentSensorResult == sensorResult || cnt2 < waitForSteering) {
 		return;
 	}
 	cnt2 = 0;
 
 	currentSensorResult = sensorResult;
 
-	float steering = CHECK_RATE*getSteeringAngle(sensorResult);
+	int steering = getSteeringAngle(sensorResult);
 
-	float handleAngle = currentAngle + steering;
+	//warten anhand der zeit die der servo braucht um die grad einzustellen.
+	waitForSteering = roundf(4*(3*steering/(5*13)+11))+5;
 
-	//if (handleAngle > 30) handleAngle = 30;
-	//else if (handleAngle < -30) handleAngle = -30;
+	int handleAngle = currentAngle + steering;
 
-	float angleFactor = absf(handleAngle) / 45.0f;
+	if (handleAngle > 30*13) handleAngle = 30*13;
+	else if (handleAngle < -30*13) handleAngle = -30*13;
 
-	float fasterSpeed = 1.0f - angleFactor * 0.3f;
+	float angleFactor = abs(handleAngle) / (45.0f*13);
+
+	float fasterSpeed = 1.0f - angleFactor * 0.5f;
 	float slowerSpeed = fasterSpeed - (fasterSpeed * angleFactor);
 
 	float motorSpeedLeft;
@@ -592,12 +611,11 @@ void traceTrack() {
 		motorSpeedLeft = fasterSpeed;
 	}
 
-	//float handleAngle = (float)((roundf(currentAngle) + 1) % 15);
-
-	handlef(handleAngle);
-	motorf(motorSpeedLeft, motorSpeedRight);
-	//motorf(1.0f, 1.0f);
+	handlei(handleAngle);
+//	motorf(motorSpeedLeft, motorSpeedRight);
+	motorf(1.0f, 1.0f);
 }
+
 
 /***********************************************************************/
 /* RX62T Initialization                                                */
@@ -902,6 +920,13 @@ void handlef( float angle )
 {
     /* When the servo move from left to right in reverse, replace "-" with "+". */
     MTU3.TGRD = SERVO_CENTER - iroundf(angle * HANDLE_STEP);
+
+    currentAngle = angle;
+}
+void handlei( int angle )
+{
+    /* When the servo move from left to right in reverse, replace "-" with "+". */
+    MTU3.TGRD = SERVO_CENTER - angle;
 
     currentAngle = angle;
 }
