@@ -171,21 +171,21 @@ void main(void)
 
         case 11:
             /* Normal trace */
-            if( check_crossline() ) {   /* Cross line check            */
-            	cnt2 = 0;
-                pattern = 21;
-                break;
-            }
-            if( check_rightline() ) {   /* Right half line detection check */
-            	cnt2 = 0;
-                pattern = 51;
-                break;
-            }
-            if( check_leftline() ) {    /* Left half line detection check */
-            	cnt2 = 0;
-                pattern = 61;
-                break;
-            }
+//            if( check_crossline() ) {   /* Cross line check            */
+//            	cnt2 = 0;
+//                pattern = 21;
+//                break;
+//            }
+//            if( check_rightline() ) {   /* Right half line detection check */
+//            	cnt2 = 0;
+//                pattern = 51;
+//                break;
+//            }
+//            if( check_leftline() ) {    /* Left half line detection check */
+//            	cnt2 = 0;
+//                pattern = 61;
+//                break;
+//            }
             traceTrack();
 
 //            switch( sensor_inp(MASK3_3) ) {
@@ -576,22 +576,11 @@ int getSteeringAngle(int sensorResult) {
 int waitForSteering = 0;
 
 void traceTrack() {
-    //led_out(ledState);
-
 	int sensorResult = sensor_inp(MASK4_4);
-	if (currentSensorResult == sensorResult || cnt2 < waitForSteering) {
-		return;
-	}
-	cnt2 = 0;
 
 	currentSensorResult = sensorResult;
 
-	int steering = getSteeringAngle(sensorResult);
-
-	//warten anhand der zeit die der servo braucht um die grad einzustellen.
-	waitForSteering = roundf(4*(3*steering/(5*13)+11))+5;
-
-	int handleAngle = currentAngle + steering;
+	int handleAngle = getSteeringAngle(sensorResult);
 
 	if (handleAngle > 30*13) handleAngle = 30*13;
 	else if (handleAngle < -30*13) handleAngle = -30*13;
@@ -612,8 +601,7 @@ void traceTrack() {
 	}
 
 	handlei(handleAngle);
-//	motorf(motorSpeedLeft, motorSpeedRight);
-	motorf(1.0f, 1.0f);
+	motorf(motorSpeedLeft, motorSpeedRight);
 }
 
 
