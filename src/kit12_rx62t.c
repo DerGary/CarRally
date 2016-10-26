@@ -26,8 +26,8 @@ This program supports the following boards:
 
 /* Constant settings */
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
-//4 = 2370
-//1 = 2284
+//CAR 4 ~ 2370
+//CAR 1 = 2284
 #define SERVO_CENTER    2284            /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
@@ -42,6 +42,10 @@ This program supports the following boards:
 #define MASK0_4         0x0f            /* X X X X  O O O O            */
 #define MASK4_4         0xff            /* O O O O  O O O O            */
 
+
+#define RIGHT_LINE 	0x1f //O O O X  X X X X
+#define LEFT_LINE 	0xf8 //X X X X  X O O O
+#define CROSS_LINE  0xff //X X X X  X X X X
 /*======================================*/
 /* Prototype declarations               */
 /*======================================*/
@@ -49,28 +53,21 @@ void init(void);
 void timer( unsigned long timer_set );
 unsigned char sensor_inp( unsigned char mask );
 unsigned char startbar_get( void );
-int check_crossline( void );
-int check_rightline( void );
-int check_leftline( void );
 unsigned char dipsw_get( void );
 unsigned char buttonsw_get( void );
 unsigned char pushsw_get( void );
 void led_out_m( unsigned char led );
 void led_out( unsigned char led );
 void motor( int accele_l, int accele_r );
-void motorf( float accele_l, float accele_r );
 void handle( int angle );
-void handlei( int angle );
-void handlef( float angle );
 void traceTrack();
 void steeringTest();
-
+unsigned char readSensor(void);
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
 unsigned long   cnt0;
 unsigned long   cnt1;
-unsigned long	cnt2;
 int             pattern;
 
 int ledState;
@@ -83,6 +80,16 @@ int lastSteeringAdjust;
 unsigned char sharpTurnCounter = 0;
 #define TOTAL_SHARP_TURNS 6
 #define NUM_SHARP_TURN (sharpTurnCounter % (TOTAL_SHARP_TURNS + 1))
+
+// TODO: Define in another file
+int iroundf(float f) {
+	return f < 0 ? (int)(f - 0.5f) : (int)(f + 0.5f);
+}
+
+float absf(float f) {
+	return f < 0 ? -f : f;
+}
+
 
 /***********************************************************************/
 /* Main program                                                        */
@@ -104,7 +111,6 @@ void main(void)
     	if (!sensor_inp(MASK4_4)) {
     		//handle(0);
     		motor(0, 0);
-    		cnt2 = 0;
     		pattern = 0;
     	}
 
@@ -171,96 +177,32 @@ void main(void)
 
         case 11:
             /* Normal trace */
-//            if( check_crossline() ) {   /* Cross line check            */
-//            	cnt2 = 0;
-//                pattern = 21;
-//                break;
-//            }
-//            if( check_rightline() ) {   /* Right half line detection check */
-//            	cnt2 = 0;
-//                pattern = 51;
-//                break;
-//            }
-//            if( check_leftline() ) {    /* Left half line detection check */
-//            	cnt2 = 0;
-//                pattern = 61;
-//                break;
-//            }
+            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
+                pattern = 21;
+                break;
+            }
+            if( readSensor() == RIGHT_LINE ) {   /* Right half line detection check */
+                pattern = 51;
+                break;
+            }
+            if( readSensor() == LEFT_LINE ) {    /* Left half line detection check */
+                pattern = 61;
+                break;
+            }
             traceTrack();
-
-//            switch( sensor_inp(MASK3_3) ) {
-//                case 0x00:
-//                    /* Center -> straight */
-//                    handle( 0 );
-//                    motor( 100 ,100 );
-//                    break;
-//
-//                case 0x04:
-//                    /* Slight amount left of center -> slight turn to right */
-//                    handle( 5 );
-//                    motor( 100 ,100 );
-//                    break;
-//
-//                case 0x06:
-//                    /* Small amount left of center -> small turn to right */
-//                    handle( 10 );
-//                    motor( 80 ,67 );
-//                    break;
-//
-//                case 0x07:
-//                    /* Medium amount left of center -> medium turn to right */
-//                    handle( 15 );
-//                    motor( 50 ,38 );
-//                    break;
-//
-//                case 0x03:
-//                    /* Large amount left of center -> large turn to right */
-//                    handle( 25 );
-//                    motor( 30 ,19 );
-//                    pattern = 12;
-//                    break;
-//
-//                case 0x20:
-//                    /* Slight amount right of center -> slight turn to left */
-//                    handle( -5 );
-//                    motor( 100 ,100 );
-//                    break;
-//
-//                case 0x60:
-//                    /* Small amount right of center -> small turn to left */
-//                    handle( -10 );
-//                    motor( 67 ,80 );
-//                    break;
-//
-//                case 0xe0:
-//                    /* Medium amount right of center -> medium turn to left */
-//                    handle( -15 );
-//                    motor( 38 ,50 );
-//                    break;
-//
-//                case 0xc0:
-//                    /* Large amount right of center -> large turn to left */
-//                    handle( -25 );
-//                    motor( 19 ,30 );
-//                    pattern = 13;
-//                    break;
-//
-//                default:
-//                    break;
-//            }
             break;
 
         case 12:
             /* Check end of large turn to right */
-            if( check_crossline() ) {   /* Cross line check during large turn */
+            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
                 pattern = 21;
                 break;
             }
-            if( check_rightline() ) {   /* Right half line detection check */
+            if( readSensor() == RIGHT_LINE ) {   /* Right half line detection check */
                 pattern = 51;
                 break;
             }
-            if( check_leftline() ) {    /* Left half line detection check */
+            if( readSensor() == LEFT_LINE ) {    /* Left half line detection check */
                 pattern = 61;
                 break;
             }
@@ -271,15 +213,15 @@ void main(void)
 
         case 13:
             /* Check end of large turn to left */
-            if( check_crossline() ) {   /* Cross line check during large turn */
+            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
                 pattern = 21;
                 break;
             }
-            if( check_rightline() ) {   /* Right half line detection check */
+            if( readSensor() == RIGHT_LINE ) {   /* Right half line detection check */
                 pattern = 51;
                 break;
             }
-            if( check_leftline() ) {    /* Left half line detection check */
+            if( readSensor() == LEFT_LINE ) {    /* Left half line detection check */
                 pattern = 61;
                 break;
             }
@@ -524,74 +466,60 @@ void main(void)
     }
 }
 
-int iroundf(float f) {
-	return f < 0 ? (int)(f - 0.5f) : (int)(f + 0.5f);
-}
 
-float absf(float f) {
-	return f < 0 ? -f : f;
-}
 int getSteeringAngle(int sensorResult) {
-	float baseSteering;
+	int baseSteering;
 	switch(sensorResult) {
+		case 0x38: baseSteering = -2; break; //0b0011 1000
+		case 0x1c: baseSteering = 2; break;  //0b0001 1100
 
-		case 0x38: baseSteering = -3.28f; break; //0b0011 1000
-		case 0x1c: baseSteering = 3.28f; break; //0b0001 1100
+		case 0x08: baseSteering = 3; break;  //0b0000 1000
+		case 0x04: baseSteering = 15; break; //0b0000 0100
+		case 0x02: baseSteering = 32; break; //0b0000 0010
+		case 0x01: baseSteering = 45; break; //0b0000 0001
 
-		case 0x08: baseSteering = 3.28f; break; //0b0000 1000
-		case 0x04: baseSteering = 9.77f; break; //0b0000 0100
-		case 0x02: baseSteering = 16.02f; break; //0b0000 0010
-		case 0x01: baseSteering = 21.90f; break; //0b0000 0001
+		case 0x0C: baseSteering = 8; break;  //0b0000 1100
+		case 0x06: baseSteering = 25; break; //0b0000 0110
+		case 0x03: baseSteering = 37; break; //0b0000 0011
 
-		case 0x0C: baseSteering = 6.55f; break; //0b0000 1100
-		case 0x06: baseSteering = 12.94f; break; //0b0000 0110
-		case 0x03: baseSteering = 19.01f; break; //0b0000 0011
+		case 0x0e: baseSteering = 15; break; //0b0000 1110
+		case 0x07: baseSteering = 32; break; //0b0000 0111
 
-		case 0x0e: baseSteering = 9.77f; break; //0b0000 1110
-		case 0x07: baseSteering = 16.02f; break; //0b0000 0111
-
-		case 0x0f: baseSteering = 12.94f; break; //0b0000 1111
+		case 0x0f: baseSteering = 25; break; //0b0000 1111
 
 
-		case 0x10: baseSteering = -3.28f; break; //0b0001 0000
-		case 0x20: baseSteering = -9.77f; break; //0b0010 0000
-		case 0x40: baseSteering = -16.02f; break; //0b0100 0000
-		case 0x80: baseSteering = -21.90f; break; //0b1000 0000
+		case 0x10: baseSteering = -3; break;  //0b0001 0000
+		case 0x20: baseSteering = -15; break; //0b0010 0000
+		case 0x40: baseSteering = -32; break; //0b0100 0000
+		case 0x80: baseSteering = -45; break; //0b1000 0000
 
-		case 0x30: baseSteering = -6.55f;  break; //0b0011 0000
-		case 0x60: baseSteering = -12.94f; break; //0b0110 0000
-		case 0xc0: baseSteering = -19.01f; break; //0b1100 0000
+		case 0x30: baseSteering = -8;  break; //0b0011 0000
+		case 0x60: baseSteering = -25; break; //0b0110 0000
+		case 0xc0: baseSteering = -37; break; //0b1100 0000
 
-		case 0x70: baseSteering = -9.77f;  break; //0b0111 0000
-		case 0xe0: baseSteering = -16.02f; break; //0b1110 0000
+		case 0x70: baseSteering = -15; break; //0b0111 0000
+		case 0xe0: baseSteering = -32; break; //0b1110 0000
 
-		case 0xf0: baseSteering = -12.94f; break; //0b1111 0000
+		case 0xf0: baseSteering = -25; break; //0b1111 0000
 
 		//0b0001 1000
-		default: baseSteering = 0.0f; break;
+		default: baseSteering = 0; break;
 	}
-	return roundf(baseSteering*13);
+	return baseSteering;
 }
-
-int waitForSteering = 0;
 
 void traceTrack() {
 	int sensorResult = sensor_inp(MASK4_4);
 
-	currentSensorResult = sensorResult;
-
 	int handleAngle = getSteeringAngle(sensorResult);
 
-	if (handleAngle > 30*13) handleAngle = 30*13;
-	else if (handleAngle < -30*13) handleAngle = -30*13;
+	int angleFactor = abs(handleAngle) * 100 / 45;
 
-	float angleFactor = abs(handleAngle) / (45.0f*13);
+	int fasterSpeed = 100 - angleFactor * 0.5f;
+	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor/200.0f));
 
-	float fasterSpeed = 1.0f - angleFactor * 0.5f;
-	float slowerSpeed = fasterSpeed - (fasterSpeed * angleFactor);
-
-	float motorSpeedLeft;
-	float motorSpeedRight;
+	int motorSpeedLeft;
+	int motorSpeedRight;
 	if (handleAngle < 0) {
 		motorSpeedRight = fasterSpeed;
 		motorSpeedLeft = slowerSpeed;
@@ -600,8 +528,8 @@ void traceTrack() {
 		motorSpeedLeft = fasterSpeed;
 	}
 
-	handlei(handleAngle);
-	motorf(motorSpeedLeft, motorSpeedRight);
+	handle(handleAngle);
+	motor(motorSpeedLeft, motorSpeedRight);
 }
 
 
@@ -692,7 +620,6 @@ void Excep_CMT0_CMI0(void)
 {
     cnt0++;
     cnt1++;
-    cnt2++;
 }
 
 /***********************************************************************/
@@ -705,6 +632,10 @@ void timer( unsigned long timer_set )
     while( cnt0 < timer_set );
 }
 
+unsigned char readSensor(void)
+{
+    return sensor_inp(MASK4_4);
+}
 /***********************************************************************/
 /* Sensor state detection                                              */
 /* Arguments:       masked values                                      */
@@ -733,57 +664,6 @@ unsigned char startbar_get( void )
     b  = ~PORT4.PORT.BIT.B0 & 0x01;     /* Read start bar signal       */
 
     return  b;
-}
-
-/***********************************************************************/
-/* Cross line detection processing                                     */
-/* Return values: 0: no cross line, 1: cross line                      */
-/***********************************************************************/
-int check_crossline( void )
-{
-    unsigned char b;
-    int ret;
-
-    ret = 0;
-    b = sensor_inp(MASK3_3);
-    if( b==0xe7 ) {
-        ret = 1;
-    }
-    return ret;
-}
-
-/***********************************************************************/
-/* Right half line detection processing                                */
-/* Return values: 0: not detected, 1: detected                         */
-/***********************************************************************/
-int check_rightline( void )
-{
-    unsigned char b;
-    int ret;
-
-    ret = 0;
-    b = sensor_inp(MASK4_4);
-    if( b==0x1f ) {
-        ret = 1;
-    }
-    return ret;
-}
-
-/***********************************************************************/
-/* Left half line detection processing                                 */
-/* Return values: 0: not detected, 1: detected                         */
-/***********************************************************************/
-int check_leftline( void )
-{
-    unsigned char b;
-    int ret;
-
-    ret = 0;
-    b = sensor_inp(MASK4_4);
-    if( b==0xf8 ) {
-        ret = 1;
-    }
-    return ret;
 }
 
 /***********************************************************************/
@@ -885,10 +765,6 @@ void motor( int accele_l, int accele_r )
     }
 }
 
-void motorf( float accele_l, float accele_r)
-{
-	motor(iroundf(accele_l*100.0f), iroundf(accele_r*100.0f));
-}
 
 /***********************************************************************/
 /* Servo steering operation                                            */
@@ -900,25 +776,7 @@ void handle( int angle )
 {
     /* When the servo move from left to right in reverse, replace "-" with "+". */
     MTU3.TGRD = SERVO_CENTER - angle * HANDLE_STEP;
-
-    currentAngle = (float)angle;
 }
-
-void handlef( float angle )
-{
-    /* When the servo move from left to right in reverse, replace "-" with "+". */
-    MTU3.TGRD = SERVO_CENTER - iroundf(angle * HANDLE_STEP);
-
-    currentAngle = angle;
-}
-void handlei( int angle )
-{
-    /* When the servo move from left to right in reverse, replace "-" with "+". */
-    MTU3.TGRD = SERVO_CENTER - angle;
-
-    currentAngle = angle;
-}
-
 /***********************************************************************/
 /* end of file                                                         */
 /***********************************************************************/
