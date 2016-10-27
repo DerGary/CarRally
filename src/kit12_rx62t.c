@@ -28,7 +28,8 @@ This program supports the following boards:
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
 //CAR 4 ~ 2370
 //CAR 1 = 2284
-#define SERVO_CENTER    2284            /* Servo center value          */
+//CAR 2 = 2300
+#define SERVO_CENTER    2300            /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
@@ -111,7 +112,7 @@ void main(void)
     	if (!sensor_inp(MASK4_4)) {
     		//handle(0);
     		motor(0, 0);
-    		pattern = 0;
+    		pattern = 2;
     	}
 
         switch( pattern ) {
@@ -175,20 +176,25 @@ void main(void)
             }
             break;
 
+        case 2:
+        	if(readSensor() != 0x00){
+        		pattern = 11;
+        	}
+        	break;
         case 11:
             /* Normal trace */
-            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
-                pattern = 21;
-                break;
-            }
-            if( readSensor() == RIGHT_LINE ) {   /* Right half line detection check */
-                pattern = 51;
-                break;
-            }
-            if( readSensor() == LEFT_LINE ) {    /* Left half line detection check */
-                pattern = 61;
-                break;
-            }
+//            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
+//                pattern = 21;
+//                break;
+//            }
+//            if( readSensor() == RIGHT_LINE ) {   /* Right half line detection check */
+//                pattern = 51;
+//                break;
+//            }
+//            if( readSensor() == LEFT_LINE ) {    /* Left half line detection check */
+//                pattern = 61;
+//                break;
+//            }
             traceTrack();
             break;
 
@@ -474,33 +480,33 @@ int getSteeringAngle(int sensorResult) {
 		case 0x1c: baseSteering = 2; break;  //0b0001 1100
 
 		case 0x08: baseSteering = 3; break;  //0b0000 1000
-		case 0x04: baseSteering = 15; break; //0b0000 0100
-		case 0x02: baseSteering = 32; break; //0b0000 0010
-		case 0x01: baseSteering = 45; break; //0b0000 0001
+		case 0x04: baseSteering = 12; break; //0b0000 0100
+		case 0x02: baseSteering = 28; break; //0b0000 0010
+		case 0x01: baseSteering = 44; break; //0b0000 0001
 
 		case 0x0C: baseSteering = 8; break;  //0b0000 1100
-		case 0x06: baseSteering = 25; break; //0b0000 0110
-		case 0x03: baseSteering = 37; break; //0b0000 0011
+		case 0x06: baseSteering = 20; break; //0b0000 0110
+		case 0x03: baseSteering = 36; break; //0b0000 0011
 
-		case 0x0e: baseSteering = 15; break; //0b0000 1110
-		case 0x07: baseSteering = 32; break; //0b0000 0111
+		case 0x0e: baseSteering = 12; break; //0b0000 1110
+		case 0x07: baseSteering = 28; break; //0b0000 0111
 
-		case 0x0f: baseSteering = 25; break; //0b0000 1111
+		case 0x0f: baseSteering = 20; break; //0b0000 1111
 
 
 		case 0x10: baseSteering = -3; break;  //0b0001 0000
-		case 0x20: baseSteering = -15; break; //0b0010 0000
-		case 0x40: baseSteering = -32; break; //0b0100 0000
-		case 0x80: baseSteering = -45; break; //0b1000 0000
+		case 0x20: baseSteering = -12; break; //0b0010 0000
+		case 0x40: baseSteering = -28; break; //0b0100 0000
+		case 0x80: baseSteering = -44; break; //0b1000 0000
 
 		case 0x30: baseSteering = -8;  break; //0b0011 0000
-		case 0x60: baseSteering = -25; break; //0b0110 0000
-		case 0xc0: baseSteering = -37; break; //0b1100 0000
+		case 0x60: baseSteering = -20; break; //0b0110 0000
+		case 0xc0: baseSteering = -36; break; //0b1100 0000
 
-		case 0x70: baseSteering = -15; break; //0b0111 0000
-		case 0xe0: baseSteering = -32; break; //0b1110 0000
+		case 0x70: baseSteering = -12; break; //0b0111 0000
+		case 0xe0: baseSteering = -28; break; //0b1110 0000
 
-		case 0xf0: baseSteering = -25; break; //0b1111 0000
+		case 0xf0: baseSteering = -20; break; //0b1111 0000
 
 		//0b0001 1000
 		default: baseSteering = 0; break;
@@ -515,7 +521,7 @@ void traceTrack() {
 
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
-	int fasterSpeed = 100 - angleFactor * 0.5f;
+	int fasterSpeed = 100 - angleFactor * 0.75f;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor/200.0f));
 
 	int motorSpeedLeft;
