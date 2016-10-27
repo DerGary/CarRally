@@ -26,10 +26,11 @@ This program supports the following boards:
 
 /* Constant settings */
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
-//CAR 4 ~ 2370
-//CAR 1 = 2284
-//CAR 2 = 2300
-#define SERVO_CENTER    2300            /* Servo center value          */
+#define CAR_1 2284
+#define CAR_2 2291
+#define CAR_3 2321
+#define CAR_4 2370
+#define SERVO_CENTER    CAR_3            /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
