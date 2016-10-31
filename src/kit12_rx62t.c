@@ -122,6 +122,7 @@ void main(void)
         Pattern-related
          0: wait for switch input
          1: check if start bar is open
+         2: Restart if lost track is found again
         11: normal trace
         12: check end of large turn to right
         13: check end of large turn to left
