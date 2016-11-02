@@ -44,6 +44,8 @@ This program supports the following boards:
 #define MASK0_4         0x0f            /* X X X X  O O O O            */
 #define MASK1_4         0x1f            /* X X X 0  O O O O            */
 #define MASK4_1         0xf8            /* 0 0 0 0  O X X X            */
+#define MASK2_4         0x3f            /* X X 0 0  O O O O            */
+#define MASK4_2         0xfc            /* 0 0 0 0  O 0 X X            */
 #define MASK4_4         0xff            /* O O O O  O O O O            */
 
 
@@ -58,10 +60,10 @@ This program supports the following boards:
 #define DETECT_SHARP_CORNER 4
 #define SHARP_CORNER_LEFT 5
 #define SHARP_CORNER_RIGHT 6
-#define SEARCH_LINE 7
 #define WAIT_LEFT_LINE 8
 #define WAIT_RIGHT_LINE 9
-
+#define SEARCH_LINE_RIGHT 10
+#define SEARCH_LINE_LEFT 11
 
 #define LEFT 1
 #define RIGHT -1
@@ -83,6 +85,7 @@ void handle( int angle );
 void traceTrack();
 void steeringTest();
 unsigned char readSensor(void);
+unsigned char readSensorWithMask(unsigned char mask);
 int getSteeringAngle(int sensorResult);
 /*======================================*/
 /* Global variable declarations         */
@@ -210,11 +213,11 @@ void main(void)
                 pattern = CROSS_LINE;
                 cnt1 = 0;
                 break;
-            }else if(readSensor() == LEFT_LINE){
+            }else if(readSensor() == LEFT_LINE || readSensorWithMask(0xf7) == 0xf0){
             	pattern = WAIT_LEFT_LINE;
             	cnt1 = 0;
             	break;
-            }else if(readSensor() == RIGHT_LINE){
+            }else if(readSensor() == RIGHT_LINE || readSensorWithMask(0xef) == 0x0f){
 				pattern = WAIT_RIGHT_LINE;
 				cnt1 = 0;
 				break;
@@ -231,6 +234,7 @@ void main(void)
         		break;
         	} else {
         		pattern = LEFT_LINE;
+        		cnt1 = 0;
         	}
         	break;
         case WAIT_RIGHT_LINE:
@@ -241,6 +245,7 @@ void main(void)
 				break;
 			} else {
 				pattern = RIGHT_LINE;
+				cnt1 = 0;
 			}
 			break;
         case CROSS_LINE:
@@ -294,8 +299,8 @@ void main(void)
         case SHARP_CORNER_LEFT:
             /* Left crank clearing processing ? wait until stable */
             handle(-46);
-            if(cnt1 < 50){
-            	motor(-50,-50);
+            if(cnt1 < 100){
+            	motor(-100,50);
             }else{
             	motor(10, 60);
             }
@@ -307,8 +312,8 @@ void main(void)
         case SHARP_CORNER_RIGHT:
             /* Right crank clearing processing ? wait until stable */
         	handle(46);
-        	if(cnt1 < 50){
-				motor(-50,-50);
+        	if(cnt1 < 100){
+				motor(50,-100);
 			}else{
 				motor(60, 10);
 			}
@@ -320,7 +325,7 @@ void main(void)
         case LEFT_LINE:
 		  if(readSensor() == 0x00){
 			handle(-25);
-			pattern = SEARCH_LINE;
+			pattern = SEARCH_LINE_LEFT;
 			break;
 		  }
 		  handle( getSteeringAngle(readSensor()) );
@@ -329,14 +334,20 @@ void main(void)
 	  case RIGHT_LINE:
 		  if(readSensor() == 0x00){
 			handle(25);
-			pattern = SEARCH_LINE;
+			pattern = SEARCH_LINE_RIGHT;
 			break;
 		  }
 		  handle( getSteeringAngle(readSensor()) );
 		  motor( 40, 40 );
 		  break;
-	  case SEARCH_LINE:
-			if(readSensor() != 0x00){
+	  case SEARCH_LINE_LEFT:
+			if(readSensorWithMask(MASK2_4) != 0x00){
+				pattern = NORMAL_TRACE;
+				break;
+			}
+			break;
+	  case SEARCH_LINE_RIGHT:
+			if(readSensorWithMask(MASK4_2) != 0x00){
 				pattern = NORMAL_TRACE;
 				break;
 			}
@@ -397,9 +408,9 @@ int getSteeringAngle(int sensorResult) {
 void traceTrack() {
 	int mask = MASK4_4;
 	if(currentSteering == LEFT) {
-		mask = MASK4_1;
+		mask = MASK4_2;
 	} else if(currentSteering == RIGHT) {
-		mask = MASK1_4;
+		mask = MASK2_4;
 	}
 	int sensorResult = sensor_inp(mask);
 
@@ -535,6 +546,10 @@ void timer( unsigned long timer_set )
 unsigned char readSensor(void)
 {
     return sensor_inp(MASK4_4);
+}
+unsigned char readSensorWithMask(unsigned char mask)
+{
+    return sensor_inp(mask);
 }
 /***********************************************************************/
 /* Sensor state detection                                              */
