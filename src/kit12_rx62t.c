@@ -355,37 +355,37 @@ void main(void)
 int getSteeringAngle(int sensorResult) {
 	int baseSteering;
 	switch(sensorResult) {
-		case 0x38: baseSteering = -2; break; //0b0011 1000
-		case 0x1c: baseSteering = 2; break;  //0b0001 1100
+	case 0x38: baseSteering = -2; break; //0b0011 1000
+	case 0x1c: baseSteering = 2; break;  //0b0001 1100
 
-		case 0x08: baseSteering = 3; break;  //0b0000 1000
-		case 0x04: baseSteering = 10; break; //0b0000 0100
-		case 0x02: baseSteering = 24; break; //0b0000 0010
-		case 0x01: baseSteering = 36; break; //0b0000 0001
+	case 0x08: baseSteering = 3; break;  //0b0000 1000
+	case 0x04: baseSteering = 12; break; //0b0000 0100
+	case 0x02: baseSteering = 28; break; //0b0000 0010
+	case 0x01: baseSteering = 44; break; //0b0000 0001
 
-		case 0x0C: baseSteering = 5; break;  //0b0000 1100
-		case 0x06: baseSteering = 16; break; //0b0000 0110
-		case 0x03: baseSteering = 30; break; //0b0000 0011
+	case 0x0C: baseSteering = 8; break;  //0b0000 1100
+	case 0x06: baseSteering = 20; break; //0b0000 0110
+	case 0x03: baseSteering = 36; break; //0b0000 0011
 
-		case 0x0e: baseSteering = 10; break; //0b0000 1110
-		case 0x07: baseSteering = 24; break; //0b0000 0111
+	case 0x0e: baseSteering = 12; break; //0b0000 1110
+	case 0x07: baseSteering = 28; break; //0b0000 0111
 
-		case 0x0f: baseSteering = 16; break; //0b0000 1111
+	case 0x0f: baseSteering = 20; break; //0b0000 1111
 
 
-		case 0x10: baseSteering = -3; break;  //0b0001 0000
-		case 0x20: baseSteering = -10; break; //0b0010 0000
-		case 0x40: baseSteering = -24; break; //0b0100 0000
-		case 0x80: baseSteering = -36; break; //0b1000 0000
+	case 0x10: baseSteering = -3; break;  //0b0001 0000
+	case 0x20: baseSteering = -12; break; //0b0010 0000
+	case 0x40: baseSteering = -28; break; //0b0100 0000
+	case 0x80: baseSteering = -44; break; //0b1000 0000
 
-		case 0x30: baseSteering = -5;  break; //0b0011 0000
-		case 0x60: baseSteering = -16; break; //0b0110 0000
-		case 0xc0: baseSteering = -30; break; //0b1100 0000
+	case 0x30: baseSteering = -8;  break; //0b0011 0000
+	case 0x60: baseSteering = -20; break; //0b0110 0000
+	case 0xc0: baseSteering = -36; break; //0b1100 0000
 
-		case 0x70: baseSteering = -10; break; //0b0111 0000
-		case 0xe0: baseSteering = -24; break; //0b1110 0000
+	case 0x70: baseSteering = -12; break; //0b0111 0000
+	case 0xe0: baseSteering = -28; break; //0b1110 0000
 
-		case 0xf0: baseSteering = -16; break; //0b1111 0000
+	case 0xf0: baseSteering = -20; break; //0b1111 0000
 
 		//0b0001 1000
 		default: baseSteering = 0; break;
