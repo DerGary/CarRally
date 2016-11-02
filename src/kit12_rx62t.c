@@ -1,4 +1,4 @@
-/***********************************************************************/
+﻿/***********************************************************************/
  /*  Supported Microcontroller:RX62T                                    */
 /*  File:                   kit12_rx62t.c                              */
 /*  File Contents:          MCU Car Trace Basic Program(RX62T version) */
@@ -30,7 +30,7 @@ This program supports the following boards:
 #define CAR_2 2291
 #define CAR_3 2321
 #define CAR_4 2370
-#define SERVO_CENTER    CAR_1           /* Servo center value          */
+#define SERVO_CENTER    CAR_2          /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
@@ -284,12 +284,21 @@ void main(void)
                 break;
             }
         	handle(getSteeringAngle(readSensor()));
-        	motor(40,40);
+        	if(cnt1 < 200){
+        		motor(0,0);
+        	}else{
+        		motor(40,40);
+        	}
         	emergencyExit();
             break;
         case SHARP_CORNER_LEFT:
             /* Left crank clearing processing ? wait until stable */
             handle(-46);
+            if(cnt1 < 50){
+            	motor(-50,-50);
+            }else{
+            	motor(10, 60);
+            }
         	if( sensor_inp(MASK4_0) != 0x00 && cnt1 > 400){
             	pattern = NORMAL_TRACE;
             	currentSteering = LEFT;
@@ -298,6 +307,11 @@ void main(void)
         case SHARP_CORNER_RIGHT:
             /* Right crank clearing processing ? wait until stable */
         	handle(46);
+        	if(cnt1 < 50){
+				motor(-50,-50);
+			}else{
+				motor(60, 10);
+			}
         	if( sensor_inp(MASK0_4) != 0x00 && cnt1 > 400){
             	pattern = NORMAL_TRACE;
             	currentSteering = RIGHT;
@@ -393,7 +407,7 @@ void traceTrack() {
 
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
-	int fasterSpeed = 100 - angleFactor * 0.5f;
+	int fasterSpeed = 100 - angleFactor * 0.4f;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor/200.0f));
 
 	int motorSpeedLeft;
