@@ -16,10 +16,11 @@ This program supports the following boards:
 /*======================================*/
 /* Include                              */
 /*======================================*/
+#include <machine.h>
 #include "iodefine.h"
 #include "stdlib.h"
 #include "math.h"
-
+#include "debug.h"
 /*======================================*/
 /* Symbol definitions                   */
 /*======================================*/
@@ -137,6 +138,8 @@ void main(void)
     /* Initialize micom car state */
     handle( 0 );
     motor( 0, 0 );
+
+    DBG_INIT();
 
     while( 1 ) {
     	// If all sensors are off -> emergency exit
