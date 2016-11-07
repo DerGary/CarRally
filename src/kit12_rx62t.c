@@ -132,14 +132,13 @@ void main(void)
 {
     /* Initialize MCU functions */
     init();
-
-    ledState = 0;
+    debug_init();
 
     /* Initialize micom car state */
     handle( 0 );
     motor( 0, 0 );
 
-    DBG_INIT();
+    BREAK2();
 
     while( 1 ) {
     	// If all sensors are off -> emergency exit
@@ -173,7 +172,7 @@ void main(void)
 
         case WAIT_FOR_SWITCH:
             /* Wait for switch input */
-            if( pushsw_get() ) {
+        	if( pushsw_get() ) {
                 pattern = WAIT_FOR_STARTBAR;
                 cnt1 = 0;
                 break;
