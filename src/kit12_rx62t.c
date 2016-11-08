@@ -25,13 +25,28 @@ This program supports the following boards:
 /* Symbol definitions                   */
 /*======================================*/
 
+typedef union{
+	char Byte;
+	struct {
+		unsigned char b0 : 1;
+		unsigned char b1 : 1;
+		unsigned char b2 : 1;
+		unsigned char b3 : 1;
+		unsigned char b4 : 1;
+		unsigned char b5 : 1;
+		unsigned char b6 : 1;
+		unsigned char b7 : 1;
+	} Bits;
+} SensorInfo;
+
+
 /* Constant settings */
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
 #define CAR_1 2284
 #define CAR_2 2291
 #define CAR_3 2321
 #define CAR_4 2370
-#define SERVO_CENTER    CAR_2          /* Servo center value          */
+#define SERVO_CENTER    CAR_1          /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
@@ -48,7 +63,13 @@ This program supports the following boards:
 #define MASK2_4         0x3f            /* X X 0 0  O O O O            */
 #define MASK4_2         0xfc            /* 0 0 0 0  O 0 X X            */
 #define MASK4_4         0xff            /* O O O O  O O O O            */
+#define MASK2_1         0x38            /* X X 0 O  O X X X            */
+#define MASK1_2         0x1c            /* X X X O  O 0 X X            */
 
+
+#define LEFT_MASK MASK4_2
+#define RIGHT_MASK MASK2_4
+#define NORMAL_MASK MASK4_4
 
 #define RIGHT_LINE 	0x1f //O O O X  X X X X
 #define LEFT_LINE 	0xf8 //X X X X  X O O O
@@ -85,9 +106,11 @@ void motor( int accele_l, int accele_r );
 void handle( int angle );
 void traceTrack();
 void steeringTest();
-unsigned char readSensor(void);
+unsigned char readSensor();
 unsigned char readSensorWithMask(unsigned char mask);
 int getSteeringAngle(int sensorResult);
+SensorInfo readSensorInfo();
+SensorInfo readSensorInfoWithMask(unsigned char mask);
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
@@ -124,6 +147,9 @@ void emergencyExit(void){
 		pattern = 2;
 	}
 }
+
+int currentMask;
+int traceMask;
 
 /***********************************************************************/
 /* Main program                                                        */
@@ -212,25 +238,27 @@ void main(void)
         	break;
         case NORMAL_TRACE:
             /* Normal trace */
-            if( readSensor() == CROSS_LINE ) {   /* Cross line check during large turn */
+            if( readSensorWithMask(currentMask) == CROSS_LINE ) {   /* Cross line check during large turn */
                 pattern = CROSS_LINE;
                 cnt1 = 0;
                 break;
-            }else if(readSensor() == LEFT_LINE || readSensorWithMask(0xf7) == 0xf0){
+            }else if(readSensorWithMask(currentMask) == LEFT_LINE || readSensorWithMask(currentMask) == 0xf0){
             	pattern = WAIT_LEFT_LINE;
             	cnt1 = 0;
             	break;
-            }else if(readSensor() == RIGHT_LINE || readSensorWithMask(0xef) == 0x0f){
+            }else if(readSensorWithMask(currentMask) == RIGHT_LINE || readSensorWithMask(currentMask) == 0x0f){
 				pattern = WAIT_RIGHT_LINE;
 				cnt1 = 0;
 				break;
             } else {
+            	led_out(0x0);
                 traceTrack();
             }
         	emergencyExit();
             break;
         case WAIT_LEFT_LINE:
         	timer(10);
+			led_out(0x2);
         	if(readSensor() == CROSS_LINE){
         		pattern = CROSS_LINE;
         		cnt1 = 0;
@@ -242,6 +270,7 @@ void main(void)
         	break;
         case WAIT_RIGHT_LINE:
 			timer(10);
+			led_out(0x2);
 			if(readSensor() == CROSS_LINE){
 				pattern = CROSS_LINE;
 				cnt1 = 0;
@@ -259,7 +288,7 @@ void main(void)
 
             // Center handle and turn off motors
 
-            led_out( 0x3 );
+
             handle( getSteeringAngle(readSensor()) );
             motor( 40, 40 );
             if(cnt1 > 200){
@@ -275,7 +304,7 @@ void main(void)
             /* Trace, crank detection after cross line */
             if( sensor_inp(MASK4_0)==0xf0 ) {
                 /* Left crank determined -> to left crank clearing processing */
-                led_out( 0x1 );
+
                 handle(-46);
                 motor( 10 ,60 );
                 pattern = SHARP_CORNER_LEFT;
@@ -284,7 +313,7 @@ void main(void)
             }
             if( sensor_inp(MASK0_4)==0x0f ) {
                 /* Right crank determined -> to right crank clearing processing */
-                led_out( 0x2 );
+
                 handle(46);
                 motor( 60 ,10 );
                 pattern = SHARP_CORNER_RIGHT;
@@ -307,9 +336,9 @@ void main(void)
             }else{
             	motor(10, 60);
             }
-        	if( sensor_inp(MASK4_0) != 0x00 && cnt1 > 400){
+        	if( readSensorWithMask(MASK2_1) != 0x00 && cnt1 > 200){
             	pattern = NORMAL_TRACE;
-            	currentSteering = LEFT;
+            	currentMask = LEFT_MASK;
             }
             break;
         case SHARP_CORNER_RIGHT:
@@ -320,41 +349,57 @@ void main(void)
 			}else{
 				motor(60, 10);
 			}
-        	if( sensor_inp(MASK0_4) != 0x00 && cnt1 > 400){
+        	if( readSensorWithMask(MASK1_2) != 0x00 && cnt1 > 200){
             	pattern = NORMAL_TRACE;
-            	currentSteering = RIGHT;
+            	currentMask = RIGHT_MASK;
             }
             break;
         case LEFT_LINE:
+        	led_out(0x1);
 		  if(readSensor() == 0x00){
 			handle(-25);
 			pattern = SEARCH_LINE_LEFT;
+			currentMask = RIGHT_MASK;
 			break;
 		  }
 		  handle( getSteeringAngle(readSensor()) );
 		  motor( 40, 40 );
 		  break;
 	  case RIGHT_LINE:
+		  led_out(0x1);
 		  if(readSensor() == 0x00){
 			handle(25);
 			pattern = SEARCH_LINE_RIGHT;
+			currentMask = LEFT_MASK;
 			break;
 		  }
 		  handle( getSteeringAngle(readSensor()) );
 		  motor( 40, 40 );
 		  break;
 	  case SEARCH_LINE_LEFT:
-			if(readSensorWithMask(MASK2_4) != 0x00){
+	  {
+		  SensorInfo result = readSensorInfo();
+		  led_out(0x3);
+			if(result.Bits.b7 == 0 && result.Bits.b6 == 0 && result.Byte != 0x00){
 				pattern = NORMAL_TRACE;
+				traceMask = RIGHT_MASK;
+				currentMask = RIGHT_MASK;
 				break;
 			}
 			break;
+	  }
 	  case SEARCH_LINE_RIGHT:
-			if(readSensorWithMask(MASK4_2) != 0x00){
+	  {
+		  SensorInfo result = readSensorInfo();
+		  led_out(0x3);
+		  if(result.Bits.b0 == 0 && result.Bits.b1 == 0 && result.Byte != 0x00){
 				pattern = NORMAL_TRACE;
+				traceMask = LEFT_MASK;
+				currentMask = LEFT_MASK;
 				break;
 			}
 			break;
+	  }
 	  default:
             /* If neither, return to standby state */
 		  motor(0,0);
@@ -401,6 +446,12 @@ int getSteeringAngle(int sensorResult) {
 
 	case 0xf0: baseSteering = -20; break; //0b1111 0000
 
+	case 0xf8: baseSteering = -12; break; //0b1111 1000
+	case 0x78: baseSteering = -8; break; //0b0111 1000
+
+	case 0x1f: baseSteering = 12; break; //0b0001 1111
+	case 0x1e: baseSteering = 8; break; //0b0001 1110
+
 		//0b0001 1000
 		default: baseSteering = 0; break;
 	}
@@ -409,15 +460,10 @@ int getSteeringAngle(int sensorResult) {
 
 
 void traceTrack() {
-	int mask = MASK4_4;
-	if(currentSteering == LEFT) {
-		mask = MASK4_2;
-	} else if(currentSteering == RIGHT) {
-		mask = MASK2_4;
-	}
-	int sensorResult = sensor_inp(mask);
+	int unmaskedSensorResult = readSensor();
+	int maskedSensorResult = unmaskedSensorResult & traceMask;
 
-	int handleAngle = getSteeringAngle(sensorResult);
+	int handleAngle = getSteeringAngle(maskedSensorResult);
 
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
@@ -434,12 +480,14 @@ void traceTrack() {
 		motorSpeedLeft = fasterSpeed;
 	}
 
-	if(abs(handleAngle) < 5){
-		currentSteering = NORMAL;
-	}else if(handleAngle < 0){
-		currentSteering = LEFT;
-	}else if(handleAngle > 0){
-		currentSteering = RIGHT;
+	int angle = getSteeringAngle(unmaskedSensorResult);
+	if(abs(angle) < 5){
+		traceMask = NORMAL_MASK;
+		currentMask = NORMAL_MASK;
+	}else if(angle < 0){
+		traceMask = LEFT_MASK;
+	}else if(angle > 0){
+		traceMask = RIGHT_MASK;
 	}
 
 	handle(handleAngle);
@@ -546,13 +594,24 @@ void timer( unsigned long timer_set )
     while( cnt0 < timer_set );
 }
 
-unsigned char readSensor(void)
+unsigned char readSensor()
 {
     return sensor_inp(MASK4_4);
 }
 unsigned char readSensorWithMask(unsigned char mask)
 {
     return sensor_inp(mask);
+}
+
+SensorInfo readSensorInfo()
+{
+	SensorInfo x = {~PORT4.PORT.BYTE};
+	return x;
+}
+SensorInfo readSensorInfoWithMask(unsigned char mask)
+{
+	SensorInfo x = {(~PORT4.PORT.BYTE & mask)};
+	return x;
 }
 /***********************************************************************/
 /* Sensor state detection                                              */
