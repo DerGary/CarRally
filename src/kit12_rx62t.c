@@ -89,8 +89,8 @@ typedef union
 #define SEARCH_LINE_RIGHT 10
 #define SEARCH_LINE_LEFT 11
 
-#define LEFT 1
-#define RIGHT -1
+#define LEFT -1
+#define RIGHT 1
 #define NORMAL 0
 /*======================================*/
 /* Prototype declarations               */
@@ -110,11 +110,13 @@ void traceTrack();
 void steeringTest();
 unsigned char readSensor();
 unsigned char readSensorWithMask(unsigned char mask);
-int getSteeringAngle(int sensorResult);
+int getSteeringAngle(SensorInfo sensorResult);
 SensorInfo readSensorInfo();
 SensorInfo readSensorInfoWithMask(unsigned char mask);
 SensorInfo maskSensorInfo(SensorInfo info, unsigned char mask);
 int dasKalman(int measurement);
+int getSteeringAngleNew(int sensorResult);
+void setSpeed(int handleAngle, int divisor);
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
@@ -128,6 +130,7 @@ int currentSteering = NORMAL;
 int currentAngle;
 int currentSensorResult;
 int lastSteeringAdjust;
+int previousHandleAngle = 0;
 
 /* 90° Turn Counter */
 unsigned char sharpTurnCounter = 0;
@@ -251,7 +254,6 @@ void main(void)
 					default:
 						led_out(0x0);
 						traceTrack();
-						emergencyExit();
 						break;
 				}
 				break;
@@ -302,7 +304,7 @@ void main(void)
 
 				// after we detected a cross line we want the car to slow down and still follow
 				// the track so the sensor board is still in centered over the track
-				handle(getSteeringAngle(readSensor()));
+				handle(getSteeringAngle(readSensorInfo()));
 				motor(40, 40);
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
@@ -348,7 +350,7 @@ void main(void)
 				{
 					// as long as we haven't detected in which direction we have to steer,
 					// we should still follow the line.
-					handle(getSteeringAngle(readSensor()));
+					handle(getSteeringAngle(readSensorInfo()));
 					if (cnt1 < 200)
 					{
 						// in the first 200 ms we stop the motors completely to break even
@@ -421,7 +423,7 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					handle(getSteeringAngle(readSensor()));
+					handle(getSteeringAngle(readSensorInfo()));
 					motor(40, 40);
 
 				}
@@ -438,7 +440,7 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					handle(getSteeringAngle(readSensor()));
+					handle(getSteeringAngle(readSensorInfo()));
 					motor(40, 40);
 				}
 				break;
@@ -505,66 +507,93 @@ int dasKalman(int measurement){
 	return estimate;
 }
 
-int getSteeringAngle(int sensorResult) {
+int getSteeringAngle(SensorInfo sensorResult) {
 	int baseSteering;
-	switch(sensorResult) {
-	case 0x38: baseSteering = -2; break; //0b0011 1000
-	case 0x1c: baseSteering = 2; break;  //0b0001 1100
+	switch(sensorResult.Byte) {
+		case 0x38: baseSteering = -2; break; //0b0011 1000
+		case 0x1c: baseSteering = 2; break;  //0b0001 1100
 
-	case 0x08: baseSteering = 3; break;  //0b0000 1000
-	case 0x04: baseSteering = 12; break; //0b0000 0100
-	case 0x02: baseSteering = 28; break; //0b0000 0010
-	case 0x01: baseSteering = 44; break; //0b0000 0001
+		case 0x08: baseSteering = 3; break;  //0b0000 1000
+		case 0x04: baseSteering = 12; break; //0b0000 0100
+		case 0x02: baseSteering = 28; break; //0b0000 0010
+		case 0x01: baseSteering = 44; break; //0b0000 0001
 
-	case 0x0C: baseSteering = 8; break;  //0b0000 1100
-	case 0x06: baseSteering = 20; break; //0b0000 0110
-	case 0x03: baseSteering = 36; break; //0b0000 0011
+		case 0x0C: baseSteering = 8; break;  //0b0000 1100
+		case 0x06: baseSteering = 20; break; //0b0000 0110
+		case 0x03: baseSteering = 36; break; //0b0000 0011
 
-	case 0x0e: baseSteering = 12; break; //0b0000 1110
-	case 0x07: baseSteering = 28; break; //0b0000 0111
+		case 0x0e: baseSteering = 12; break; //0b0000 1110
+		case 0x07: baseSteering = 28; break; //0b0000 0111
 
-	case 0x0f: baseSteering = 20; break; //0b0000 1111
+		case 0x0f: baseSteering = 20; break; //0b0000 1111
 
 
-	case 0x10: baseSteering = -3; break;  //0b0001 0000
-	case 0x20: baseSteering = -12; break; //0b0010 0000
-	case 0x40: baseSteering = -28; break; //0b0100 0000
-	case 0x80: baseSteering = -44; break; //0b1000 0000
+		case 0x10: baseSteering = -3; break;  //0b0001 0000
+		case 0x20: baseSteering = -12; break; //0b0010 0000
+		case 0x40: baseSteering = -28; break; //0b0100 0000
+		case 0x80: baseSteering = -44; break; //0b1000 0000
 
-	case 0x30: baseSteering = -8;  break; //0b0011 0000
-	case 0x60: baseSteering = -20; break; //0b0110 0000
-	case 0xc0: baseSteering = -36; break; //0b1100 0000
+		case 0x30: baseSteering = -8;  break; //0b0011 0000
+		case 0x60: baseSteering = -20; break; //0b0110 0000
+		case 0xc0: baseSteering = -36; break; //0b1100 0000
 
-	case 0x70: baseSteering = -12; break; //0b0111 0000
-	case 0xe0: baseSteering = -28; break; //0b1110 0000
+		case 0x70: baseSteering = -12; break; //0b0111 0000
+		case 0xe0: baseSteering = -28; break; //0b1110 0000
 
-	case 0xf0: baseSteering = -20; break; //0b1111 0000
+		case 0xf0: baseSteering = -20; break; //0b1111 0000
 
-	case 0xf8: baseSteering = -12; break; //0b1111 1000
-	case 0x78: baseSteering = -8; break; //0b0111 1000
+		case 0xf8: baseSteering = -12; break; //0b1111 1000
+		case 0x78: baseSteering = -8; break; //0b0111 1000
 
-	case 0x1f: baseSteering = 12; break; //0b0001 1111
-	case 0x1e: baseSteering = 8; break; //0b0001 1110
+		case 0x1f: baseSteering = 12; break; //0b0001 1111
+		case 0x1e: baseSteering = 8; break; //0b0001 1110
 
 		//0b0001 1000
 		default: baseSteering = 0; break;
 	}
 	return baseSteering;
 }
-
-void traceTrack()
+int steeringTable[] = { 0, 3, 8, 12, 20, 28, 36, 44 };
+int getSteeringAngleNew(int sensorResult)
 {
-	int unmaskedSensorResult = readSensor();
-	int maskedSensorResult = unmaskedSensorResult & traceMask;
+	if (sensorResult == 0)
+		return steeringTable[0];
 
-	int handleAngle = getSteeringAngle(maskedSensorResult);
+	int sum = 0, c = 0, i = 0;
+	// solange noch aktive Bits in sensorResult
+	while (sensorResult != 0)
+	{
+		// ist das 1. (rechte) bit 1?
+		if (sensorResult % 2)
+		{
+			// wenn ja addiere die aktuelle bit position auf die summe
+			sum += i;
+			// und erhöhe counter
+			c++;
+		}
+		// schiebe bits nach rechts
+		sensorResult >>= 1;
+		// anpassen der aktuellen bitposition
+		i -= 2;
+	}
+	// ermittle index
+	int idx = (sum - c / 2) / c + 7;
+	// wenn index negativ => negiere agle
+	if (idx < 0)
+		return -steeringTable[-idx];
+	else
+		return steeringTable[idx];
+}
 
-	//handleAngle = dasKalman(handleAngle);
-
+void setSpeed(int handleAngle, int divisor)
+{
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
 	int fasterSpeed = 100 - angleFactor * 0.4f;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 200.0f));
+
+	fasterSpeed = fasterSpeed / divisor;
+	slowerSpeed = slowerSpeed / divisor;
 
 	int motorSpeedLeft;
 	int motorSpeedRight;
@@ -578,24 +607,67 @@ void traceTrack()
 		motorSpeedRight = slowerSpeed;
 		motorSpeedLeft = fasterSpeed;
 	}
+	motor(motorSpeedLeft, motorSpeedRight);
+}
+int trackPosition = 0;
+void traceTrack()
+{
+	SensorInfo unmaskedSensorResult = readSensorInfo();
+	SensorInfo maskedSensorResult = maskSensorInfo(unmaskedSensorResult, traceMask);
 
-	int angle = getSteeringAngle(unmaskedSensorResult);
-	if (abs(angle) < 5)
+	if (maskedSensorResult.Byte == 0x00)
+	{
+		if(cnt1 > 1000){
+			// after 1 second stop, you wont find the track again ;)
+			pattern = WAIT_FOR_LOST_TRACK;
+			return;
+		}
+		// lost track => steer more in the current direction until the track is found again
+		// and slow down to prevent crashing into things
+		int handleAngle = previousHandleAngle + (10 * trackPosition); // trackPosition is -1 for LEFT or 1 for RIGHT
+
+		if (abs(handleAngle) > 45)
+			handleAngle = 45 * trackPosition;
+
+		if (traceMask == LEFT_MASK)
+			traceMask = MASK4_0;
+		else if (traceMask == RIGHT_MASK)
+			traceMask = MASK0_4;
+
+		handle(handleAngle);
+		setSpeed(handleAngle, 10);
+		return;
+	}
+	int handleAngle = getSteeringAngle(maskedSensorResult);
+
+	//handleAngle = dasKalman(handleAngle);
+
+	// to set the mask we must check the masked result because an unmasked result would
+	// return a wrong angle or zero if the 2 outer most sensors are active which would
+	// reset the mask.
+	if (abs(handleAngle) < 5)
 	{
 		traceMask = NORMAL_MASK;
-		currentMask = NORMAL_MASK;
 	}
-	else if (angle < 0)
+	else if (handleAngle < 0)
 	{
 		traceMask = LEFT_MASK;
+		trackPosition = LEFT;
 	}
-	else if (angle > 0)
+	else if (handleAngle > 0)
 	{
 		traceMask = RIGHT_MASK;
+		trackPosition = RIGHT;
 	}
 
+	if(abs(getSteeringAngle(unmaskedSensorResult)) < 5){
+		// we need to use the unmasked result so the real angle can be determined
+		// for the current Mask otherwise it would be a smaller angle as it should be.
+		currentMask = NORMAL_MASK;
+	}
 	handle(handleAngle);
-	motor(motorSpeedLeft, motorSpeedRight);
+	setSpeed(handleAngle, 1);
+	cnt1 = 0;
 }
 
 /***********************************************************************/
@@ -866,6 +938,7 @@ void handle(int angle)
 {
 	/* When the servo move from left to right in reverse, replace "-" with "+". */
 	MTU3.TGRD = SERVO_CENTER - angle * HANDLE_STEP;
+	previousHandleAngle = angle;
 }
 /***********************************************************************/
 /* end of file                                                         */
