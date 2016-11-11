@@ -114,6 +114,7 @@ int getSteeringAngle(int sensorResult);
 SensorInfo readSensorInfo();
 SensorInfo readSensorInfoWithMask(unsigned char mask);
 SensorInfo maskSensorInfo(SensorInfo info, unsigned char mask);
+int dasKalman(int measurement);
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
@@ -494,6 +495,16 @@ void main(void)
 	}
 }
 
+float errorEstimate = 2;
+float errorMeasurement = 8;
+float estimate = 0;
+int dasKalman(int measurement){
+	float kalmanGain = errorEstimate/(errorEstimate+errorMeasurement);
+	float estimate = estimate + kalmanGain * (measurement-estimate);
+	errorEstimate = (1-kalmanGain)*errorEstimate;
+	return estimate;
+}
+
 int getSteeringAngle(int sensorResult) {
 	int baseSteering;
 	switch(sensorResult) {
@@ -547,6 +558,8 @@ void traceTrack()
 	int maskedSensorResult = unmaskedSensorResult & traceMask;
 
 	int handleAngle = getSteeringAngle(maskedSensorResult);
+
+	//handleAngle = dasKalman(handleAngle);
 
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
