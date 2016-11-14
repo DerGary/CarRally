@@ -94,11 +94,11 @@ int traceMask = NORMAL_MASK;
 
 /* 90° Turn Counter */
 int sharpTurnCounter = 0;
-#define TOTAL_SHARP_TURNS 2
+#define TOTAL_SHARP_TURNS 3
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 
-int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 200, 400 };
-int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 500, 100 };
+int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 100, 400, 100 };
+int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 500, 100, 300 };
 
 
 void emergencyExit(void)
@@ -106,7 +106,7 @@ void emergencyExit(void)
 	if (!readSensor())
 	{
 		motor(0, 0);
-		pattern = 2;
+		pattern = WAIT_FOR_LOST_TRACK;
 	}
 }
 
