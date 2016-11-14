@@ -88,8 +88,8 @@ int pattern;
 
 int previousHandleAngle = 0;
 int trackPosition = 0;
-int currentMask;
-int traceMask;
+int currentMask = NORMAL_MASK;
+int traceMask = NORMAL_MASK;
 
 /* 90° Turn Counter */
 unsigned char sharpTurnCounter = 0;
@@ -451,6 +451,7 @@ void traceTrack()
 	{
 		if(cnt1 > 1000){
 			// after 1 second stop, you wont find the track again ;)
+			motor(0,0);
 			pattern = WAIT_FOR_LOST_TRACK;
 			return;
 		}
