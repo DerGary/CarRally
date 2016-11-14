@@ -89,7 +89,6 @@ int pattern;
 
 int previousHandleAngle = 0;
 int trackPosition = 0;
-int currentMask = NORMAL_MASK;
 int traceMask = NORMAL_MASK;
 
 /* 90° Turn Counter */
@@ -97,8 +96,8 @@ int sharpTurnCounter = 0;
 #define TOTAL_SHARP_TURNS 3
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 
-int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 100, 400, 100 };
-int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 500, 100, 300 };
+int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 0, 400, 100 };
+int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 650, 100, 300 };
 
 
 void emergencyExit(void)
@@ -183,12 +182,12 @@ void main(void)
 				break;
 			case NORMAL_TRACE:
 				/* Normal trace */
-				if(cnt2 < 250){ // 250 ms after a cross line of left line or right line don't trigger another state then traceTrack
+				if(cnt2 < 250){ // 250 ms after a cross line / left line / right line only use normal trace
 					led_out(0x0);
 					traceTrack();
 					break;
 				}
-				switch (readSensorInfoWithMask(currentMask).Byte)
+				switch (readSensorInfo().Byte)
 				{
 					case CROSS_LINE:
 						pattern = CROSS_LINE;
@@ -321,7 +320,6 @@ void main(void)
 					// of the sensors we wait 200 ms. After that we wait till one of the
 					// 2 left most sensors detect a line then we change to the normal trace.
 					pattern = NORMAL_TRACE;
-					currentMask = LEFT_MASK;
 					traceMask = LEFT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
@@ -345,7 +343,6 @@ void main(void)
 					// of the sensors we wait 200 ms. After that we wait till one of the
 					// 2 right most sensors detect a line then we change to the normal trace.
 					pattern = NORMAL_TRACE;
-					currentMask = RIGHT_MASK;
 					traceMask = RIGHT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
@@ -358,7 +355,6 @@ void main(void)
 				{
 					// after we lost the line we steer 25° in the direction where the line should be and go into pattern search line
 					pattern = SEARCH_LINE_LEFT;
-					currentMask = RIGHT_MASK;
 					break;
 				}
 				else
@@ -375,7 +371,6 @@ void main(void)
 				{
 					// after we lost the line we go into pattern search line
 					pattern = SEARCH_LINE_RIGHT;
-					currentMask = LEFT_MASK;
 					break;
 				}
 				else
@@ -390,9 +385,9 @@ void main(void)
 				handle(-25);
 				motor(40, 40);
 
-				SensorInfo result = readSensorInfo();
+				SensorInfo result = readSensorInfoWithMask(MASK2_4);
 				led_out(0x3);
-				if (result.Bits.b7 == 0 && result.Bits.b6 == 0 && result.Byte != 0x00)
+				if (result.Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -402,7 +397,6 @@ void main(void)
 					// reading.
 					pattern = NORMAL_TRACE;
 					traceMask = RIGHT_MASK;
-					currentMask = RIGHT_MASK;
 					cnt2 = 0;
 					break;
 				}
@@ -413,9 +407,9 @@ void main(void)
 				handle(25);
 				motor(40, 40);
 
-				SensorInfo result = readSensorInfo();
+				SensorInfo result = readSensorInfoWithMask(MASK4_2);
 				led_out(0x3);
-				if (result.Bits.b0 == 0 && result.Bits.b1 == 0 && result.Byte != 0x00)
+				if (result.Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -425,7 +419,6 @@ void main(void)
 					// reading.
 					pattern = NORMAL_TRACE;
 					traceMask = LEFT_MASK;
-					currentMask = LEFT_MASK;
 					cnt2 = 0;
 					break;
 				}
@@ -476,7 +469,7 @@ void traceTrack()
 	}
 	int handleAngle = getSteeringAngle(maskedSensorResult);
 
-	//handleAngle = dasKalman(handleAngle);
+//	handleAngle = dasKalman(handleAngle);
 
 	// to set the mask we must check the masked result because an unmasked result would
 	// return a wrong angle or zero if the 2 outer most sensors are active which would
@@ -496,11 +489,6 @@ void traceTrack()
 		trackPosition = RIGHT;
 	}
 
-	if(abs(getSteeringAngle(unmaskedSensorResult)) < 5){
-		// we need to use the unmasked result so the real angle can be determined
-		// for the current Mask otherwise it would be a smaller angle as it should be.
-		currentMask = NORMAL_MASK;
-	}
 	handle(handleAngle);
 	previousHandleAngle = handleAngle;
 	setSpeed(handleAngle, 1);
@@ -517,7 +505,7 @@ int dasKalman(int measurement){
 	return estimate;
 }
 
-int getSteeringAngle(SensorInfo sensorResult) {
+int getSteeringAngleOld(SensorInfo sensorResult) {
 	int baseSteering;
 	switch(sensorResult.Byte) {
 		case 0x38: baseSteering = -2; break; //0b0011 1000
@@ -564,8 +552,9 @@ int getSteeringAngle(SensorInfo sensorResult) {
 	return baseSteering;
 }
 int steeringTable[] = { 0, 3, 8, 12, 20, 28, 36, 44 };
-int getSteeringAngleNew(int sensorResult)
+int getSteeringAngle(SensorInfo sensorInfoResult)
 {
+	int sensorResult = sensorInfoResult.Byte;
 	if (sensorResult == 0)
 		return steeringTable[0];
 
@@ -599,7 +588,7 @@ void setSpeed(int handleAngle, int divisor)
 {
 	int angleFactor = abs(handleAngle) * 100 / 45;
 
-	int fasterSpeed = 100 - angleFactor * 0.4f;
+	int fasterSpeed = 100 - angleFactor * 0.1f;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 200.0f));
 
 	fasterSpeed = fasterSpeed / divisor;
