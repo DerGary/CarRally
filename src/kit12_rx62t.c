@@ -498,7 +498,12 @@ void traceTrack()
 float errorEstimate = 2;
 float errorMeasurement = 8;
 float estimate = 0;
+int previousMeasurement = 0;
 int dasKalman(int measurement){
+	if(measurement != previousMeasurement){
+		previousMeasurement = measurement;
+		errorEstimate = 2;
+	}
 	float kalmanGain = errorEstimate/(errorEstimate+errorMeasurement);
 	float estimate = estimate + kalmanGain * (measurement-estimate);
 	errorEstimate = (1-kalmanGain)*errorEstimate;
