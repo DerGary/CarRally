@@ -84,6 +84,7 @@ void setSpeed(int handleAngle, int divisor);
 /*======================================*/
 unsigned long cnt0;
 unsigned long cnt1;
+unsigned long cnt2 = 1001;
 int pattern;
 
 int previousHandleAngle = 0;
@@ -92,9 +93,12 @@ int currentMask = NORMAL_MASK;
 int traceMask = NORMAL_MASK;
 
 /* 90° Turn Counter */
-unsigned char sharpTurnCounter = 0;
-#define TOTAL_SHARP_TURNS 6
-#define NUM_SHARP_TURN (sharpTurnCounter % (TOTAL_SHARP_TURNS + 1))
+int sharpTurnCounter = 0;
+#define TOTAL_SHARP_TURNS 2
+#define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
+
+int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 200, 400 };
+int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 500, 100 };
 
 
 void emergencyExit(void)
@@ -179,6 +183,11 @@ void main(void)
 				break;
 			case NORMAL_TRACE:
 				/* Normal trace */
+				if(cnt2 < 250){ // 250 ms after a cross line of left line or right line don't trigger another state then traceTrack
+					led_out(0x0);
+					traceTrack();
+					break;
+				}
 				switch (readSensorInfoWithMask(currentMask).Byte)
 				{
 					case CROSS_LINE:
@@ -242,31 +251,11 @@ void main(void)
 				}
 				break;
 			case CROSS_LINE:
-				// TODO:
-				// Evaluate sharp turn counter and slow down
-				// according to distance from crossline to turn
-
-				// after we detected a cross line we want the car to slow down and still follow
-				// the track so the sensor board is still in centered over the track
-				handle(getSteeringAngle(readSensorInfo()));
-				motor(40, 40);
-				// we wait 200 ms to ignore the second cross line which can not be detected when
-				// the car is really fast so we just ignore it.
-				if (cnt1 > 200)
-				{
-					// after the 200 ms we try to detect if its a left or a right corner
-					pattern = DETECT_SHARP_CORNER;
-					cnt1 = 0;
-					// Count sharp turn
-					sharpTurnCounter++;
-					break;
-				}
-				emergencyExit();
-				break;
-			case DETECT_SHARP_CORNER:
 			{
 				SensorInfo sensorResult = readSensorInfo();
-				if (maskSensorInfo(sensorResult, MASK4_0).Byte == 0xf0)
+				// we wait 200 ms to ignore the second cross line which can not be detected when
+				// the car is really fast so we just ignore it.
+				if (maskSensorInfo(sensorResult, MASK4_0).Byte == 0xf0 && cnt1 > 200)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -278,7 +267,7 @@ void main(void)
 					cnt1 = 0;
 					break;
 				}
-				else if (maskSensorInfo(sensorResult, MASK0_4).Byte == 0x0f)
+				else if (maskSensorInfo(sensorResult, MASK0_4).Byte == 0x0f && cnt1 > 200)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -295,12 +284,16 @@ void main(void)
 					// as long as we haven't detected in which direction we have to steer,
 					// we should still follow the line.
 					handle(getSteeringAngle(readSensorInfo()));
-					if (cnt1 < 200)
+					if (cnt1 < driveTimeForSharpTurns[NUM_SHARP_TURN]){
+						// drive with the same speed than before
+						motor(100,100);
+					}
+					else if (cnt1 < breakTimeForSharpTurns[NUM_SHARP_TURN] + driveTimeForSharpTurns[NUM_SHARP_TURN])
 					{
 						// in the first 200 ms we stop the motors completely to break even
 						// harder to faster get to the desired speed of 40%. Eventually we
 						// could break with negative values as well.
-						motor(0, 0);
+						motor(-100, -100);
 					}
 					else
 					{
@@ -330,6 +323,8 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					currentMask = LEFT_MASK;
 					traceMask = LEFT_MASK;
+					cnt2 = 0;
+					sharpTurnCounter++;
 				}
 				break;
 			case SHARP_CORNER_RIGHT:
@@ -352,6 +347,8 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					currentMask = RIGHT_MASK;
 					traceMask = RIGHT_MASK;
+					cnt2 = 0;
+					sharpTurnCounter++;
 				}
 				break;
 			case LEFT_LINE:
@@ -406,6 +403,7 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					traceMask = RIGHT_MASK;
 					currentMask = RIGHT_MASK;
+					cnt2 = 0;
 					break;
 				}
 				break;
@@ -428,6 +426,7 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					traceMask = LEFT_MASK;
 					currentMask = LEFT_MASK;
+					cnt2 = 0;
 					break;
 				}
 				break;
@@ -629,6 +628,7 @@ void Excep_CMT0_CMI0(void)
 {
 	cnt0++;
 	cnt1++;
+	cnt2++;
 }
 
 /***********************************************************************/
