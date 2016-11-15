@@ -8,6 +8,9 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
+#define ENABLE_DEBUG 1
+#define BUFFER_OUTPUT 1
+
 #include <stdio.h>
 #include <machine.h>
 #include "printf_lib.h"
@@ -15,8 +18,9 @@
 void debug_init();
 void _debugBreak(int pc);
 
+#if ENABLE_DEBUG
 // Prints a string like printf
-#define PRINT(_FORMAT, _ARGS)    printf("%s:%d: " _FORMAT "\r\n", __FILE__, __LINE__, _ARGS)
+#define PRINT(_FORMAT, ...)    printf("%s:%d: " _FORMAT "\r\n", __FILE__, __LINE__, __VA_ARGS__)
 // Prints the value of a variable
 #define PRINT_I(_INT)			 printf("%s:%d: %s = %d\r\n", __FILE__, __LINE__, #_INT, _INT)
 #define PRINT_F(_FLOAT)			 printf("%s:%d: %s = %f\r\n", __FILE__, __LINE__, #_FLOAT, _FLOAT)
@@ -27,7 +31,14 @@ void _debugBreak(int pc);
 
 // Prints the current file, linenumber and function name
 #define PRINT_FX()		printf("%s:%d: %s\r\n",      __FILE__, __LINE__, __func__)
-
+#else
+#define PRINT(_FORMAT, ...) (void)0
+#define PRINT_I(_INT)		(void)0
+#define PRINT_F(_FLOAT)		(void)0
+#define PRINT_S(_STRING)	(void)0
+#define PRINT_L(_LITERAL)   (void)0
+#define PRINT_FX()		    (void)0
+#endif
 // Prints EXPR, waits for user input and then executes EXPR
 #define BREAK(__EXPR__) printf("Break at %s:%d: %s\r\n", __FILE__, __LINE__, #__EXPR__); while (get_sci1(NULL)!=1) ; __EXPR__
 #define BREAK2() _debugBreak(_read_pc())

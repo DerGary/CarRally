@@ -14,7 +14,10 @@ void debug_init()
 	// Bootstrap debug functions. Has to be called before any debug function
 	// Ibit=1(permit interrupt),IPL=0
 	// (processor interrupt prior level=0)
+#if !BUFFER_OUTPUT
 	setbuf(stdout, NULL);
+#endif
+
 	init_sci1_printf( SPEED_9600 );
 	setpsw_i();
 }
