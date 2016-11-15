@@ -15,13 +15,15 @@
 void debug_init();
 void _debugBreak(int pc);
 
+// Prints a string like printf
+#define PRINT(_FORMAT, _ARGS)    printf("%s:%d: " _FORMAT "\r\n", __FILE__, __LINE__, _ARGS)
 // Prints the value of a variable
-#define PRINT_I(__X__)	printf("%s:%d: %s = %d\r\n", __FILE__, __LINE__, #__X__, __X__)
-#define PRINT_F(__X__)	printf("%s:%d: %s = %f\r\n", __FILE__, __LINE__, #__X__, __X__)
-#define PRINT_S(__X__)	printf("%s:%d: %s = %s\r\n", __FILE__, __LINE__, #__X__, __X__)
+#define PRINT_I(_INT)			 printf("%s:%d: %s = %d\r\n", __FILE__, __LINE__, #_INT, _INT)
+#define PRINT_F(_FLOAT)			 printf("%s:%d: %s = %f\r\n", __FILE__, __LINE__, #_FLOAT, _FLOAT)
+#define PRINT_S(_STRING)	     printf("%s:%d: %s = %s\r\n", __FILE__, __LINE__, #_STRING, _STRING)
 
 // Prints a literal like 42 or "Hello"
-#define PRINT_L(__X__)  printf("%s:%d: %s\r\n",      __FILE__, __LINE__, #__X__)
+#define PRINT_L(_LITERAL)  printf("%s:%d: %s\r\n",      __FILE__, __LINE__, #_LITERAL)
 
 // Prints the current file, linenumber and function name
 #define PRINT_FX()		printf("%s:%d: %s\r\n",      __FILE__, __LINE__, __func__)
