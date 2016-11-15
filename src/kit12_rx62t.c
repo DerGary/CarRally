@@ -74,7 +74,7 @@
 /*======================================*/
 void timer(unsigned long timer_set);
 void traceTrack();
-int dasKalman(int measurement);
+int interpolateAngle(int measurement);
 int getSteeringAngle(SensorInfo sensorResult);
 int getSteeringAngleNew(int sensorResult);
 void setSpeed(int handleAngle, int divisor);
@@ -421,7 +421,7 @@ int setHandleAngle(){
 }
 int setHandleAngleFromResult(SensorInfo sensorResult){
 	int handleAngle = getSteeringAngle(sensorResult);
-//	handleAngle = dasKalman(handleAngle);
+//	handleAngle = interpolateAngle(handleAngle);
 	handle(handleAngle);
 	previousHandleAngle = handleAngle;
 	return handleAngle;
@@ -444,7 +444,7 @@ void traceTrack()
 		// and slow down to prevent crashing into things
 
 //		int handleAngle = 45*trackPosition;
-//		handleAngle = dasKalman(handleAngle);
+//		handleAngle = interpolateAngle(handleAngle);
 
 		int handleAngle = previousHandleAngle;
 
@@ -484,19 +484,20 @@ void traceTrack()
 	cnt1 = 0;
 }
 
-float errorEstimate = 2;
-float errorMeasurement = 8;
-float estimate = 0;
-int previousMeasurement = 0;
-int dasKalman(int measurement){
-	if(measurement != previousMeasurement){
-		previousMeasurement = measurement;
-		errorEstimate = 2;
+float previousAngle = 0;
+int interpolateAngle(int measurement){
+	float angle = previousAngle;
+	float difference = previousAngle - measurement;
+	float scale = (difference*difference)/90*90;
+	if(previousAngle < measurement){
+		angle += 0.005*scale;
+	}else if (previousAngle > measurement){
+		angle -= 0.005*scale;
+	}else{
+		angle += 0;
 	}
-	float kalmanGain = errorEstimate/(errorEstimate+errorMeasurement);
-	float estimate = estimate + kalmanGain * (measurement-estimate);
-	errorEstimate = (1-kalmanGain)*errorEstimate;
-	return estimate;
+	previousAngle = angle;
+	return angle;
 }
 
 int getSteeringAngle(SensorInfo sensorInfoResult)
