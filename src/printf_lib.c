@@ -20,7 +20,7 @@
 // Change this define to select serial port
 // 0 = Bluetooth
 // 1 = PC via USB
-#define ACTIVE_SCI 1
+#define ACTIVE_SCI 0
 
 #if ACTIVE_SCI == 0
 	#define SCI_PORT 		SCI0
