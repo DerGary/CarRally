@@ -15,6 +15,42 @@
 #include    "printf_lib.h"              // printf related processing
 
 /*======================================*/
+/* SCI Port Selection                   */
+/*======================================*/
+// Change this define to select serial port
+// 0 = Bluetooth
+// 1 = PC via USB
+#define ACTIVE_SCI 1
+
+#if ACTIVE_SCI == 0
+	#define SCI_PORT 		SCI0
+	#define IEN_SCI_TXI 	IEN(SCI0,TXI0)
+	#define IR_SCI_ERI		IR (SCI0,ERI0)
+
+	#define VECT_SCI_ERI   	VECT_SCI0_ERI0
+	#define VECT_SCI_RXI  	VECT_SCI0_RXI0
+	#define VECT_SCI_TXI  	VECT_SCI0_TXI0
+#elif ACTIVE_SCI == 1
+	#define SCI_PORT 		SCI1
+	#define IEN_SCI_TXI 	IEN(SCI1,TXI1)
+	#define IR_SCI_ERI		IR (SCI1,ERI1)
+
+	#define VECT_SCI_ERI   	VECT_SCI1_ERI1
+	#define VECT_SCI_RXI  	VECT_SCI1_RXI1
+	#define VECT_SCI_TXI  	VECT_SCI1_TXI1
+#elif ACTIVE_SCI == 2
+	#define SCI_PORT 		SCI2
+	#define IEN_SCI_TXI 	IEN(SCI2,TXI2)
+	#define IR_SCI_ERI		IR (SCI2,ERI2)
+
+	#define VECT_SCI_ERI   	VECT_SCI2_ERI2
+	#define VECT_SCI_RXI  	VECT_SCI2_RXI2
+	#define VECT_SCI_TXI  	VECT_SCI2_TXI2
+#else
+#error SCI Port out of range! [0,1,2]
+#endif
+
+/*======================================*/
 /* Symbol definitions                   */
 /*======================================*/
 #define     SEND_BUFF_SIZE  64          // send buffer size
@@ -53,36 +89,55 @@ void init_sci1_printf( int sp )
 {
     int i;
 
+#if ACTIVE_SCI == 0
+    MSTP(SCI0) = 0 ;                    // Wakeup SCI0
+    PORTB.ICR.BIT.B1 = 1;				// RXD0input buffer ON
+#elif ACTIVE_SCI == 1
     MSTP(SCI1) = 0 ;                    // Wakeup SCI1
+    PORTD.ICR.BIT.B5 = 1;               // RXD1input buffer ON
+#elif ACTIVE_SCI == 2
+    MSTP(SCI2) = 0 ;                    // Wakeup SCI2
+    PORT8.ICR.BIT.B0 = 1;				// RXD2input buffer ON
+#endif
 
-    PORTD.ICR.BIT.B5 = 1;               // RxD1input buffer ON
-
-    SCI1.SCR.BYTE = 0 ;                 // select internal clock
+    SCI_PORT.SCR.BYTE = 0 ;                 // select internal clock
 
     // BRR = PCLK * 10^6 / ( 64 * 2^(2n-1) * B) - 1
     // PCLK = 12.288*4, n=depend on PCLK clock B=baud rate[bps]
     // n = PCLK/1:0 PCLK/4:1 PCLK/16:2 PCLK/64:3
     if( sp == SPEED_4800 ) {
-        SCI1.SMR.BYTE = 0x01 ;          // PLCK/4, asynchronous,bit 8, Parity none
-        SCI1.BRR = 80-1;                // 49152000 / ( 64 * 2 * 4800 ) - 1
+    	SCI_PORT.SMR.BYTE = 0x01 ;          // PLCK/4, asynchronous,bit 8, Parity none
+        SCI_PORT.BRR = 80-1;                // 49152000 / ( 64 * 2 * 4800 ) - 1
     } else if( sp == SPEED_9600 ) {
-        SCI1.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
-        SCI1.BRR = 160-1;               // 49152000 / ( 64 * 0.5 * 9600 ) - 1
+    	SCI_PORT.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
+    	SCI_PORT.BRR = 160-1;               // 49152000 / ( 64 * 0.5 * 9600 ) - 1
     } else if( sp == SPEED_19200 ) {
-        SCI1.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
-        SCI1.BRR = 80-1;                // 49152000 / ( 64 * 0.5 * 19200 ) - 1
+    	SCI_PORT.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
+    	SCI_PORT.BRR = 80-1;                // 49152000 / ( 64 * 0.5 * 19200 ) - 1
     } else if( sp == SPEED_38400 ) {
-        SCI1.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
-        SCI1.BRR = 40-1;                // 49152000 / ( 64 * 0.5 * 38400 ) - 1
+    	SCI_PORT.SMR.BYTE = 0x00 ;          // PLCK, asynchronous,bit 8, Parity none
+    	SCI_PORT.BRR = 40-1;                // 49152000 / ( 64 * 0.5 * 38400 ) - 1
     }
     for(i=0; i<4000; i++);              // bit 1 term(52��s,ICLK=96MHz)wait
-    SCI1.SCR.BYTE = 0xf0;               // Transmission and reception permission,
+    SCI_PORT.SCR.BYTE = 0xf0;               // Transmission and reception permission,
                                         // Transmission and reception interrupt permission
-
+#if ACTIVE_SCI == 0
+    IPR(SCI0,    ) = 7 ;                // SCI0 interrupt prior level=7
+    IEN(SCI0,TXI0) = 1 ;                // SCI0 receive interrupt permission(IEN)
+    IEN(SCI0,RXI0) = 1 ;                // SCI0 receive interrupt permission(IEN)
+    IEN(SCI0,ERI0) = 1 ;                // SCI0 receive error interrupt permission(IEN)
+#elif ACTIVE_SCI == 1
     IPR(SCI1,    ) = 7 ;                // SCI1 interrupt prior level=7
     IEN(SCI1,TXI1) = 1 ;                // SCI1 receive interrupt permission(IEN)
     IEN(SCI1,RXI1) = 1 ;                // SCI1 receive interrupt permission(IEN)
     IEN(SCI1,ERI1) = 1 ;                // SCI1 receive error interrupt permission(IEN)
+#elif ACTIVE_SCI == 2
+    IPR(SCI2,    ) = 7 ;                // SCI2 interrupt prior level=7
+    IEN(SCI2,TXI2) = 1 ;                // SCI2 receive interrupt permission(IEN)
+    IEN(SCI2,RXI2) = 1 ;                // SCI2 receive interrupt permission(IEN)
+    IEN(SCI2,ERI2) = 1 ;                // SCI2 receive error interrupt permission(IEN)
+#endif
+
 }
 
 /************************************************************************/
@@ -104,7 +159,7 @@ long write(long fileno, const unsigned char *buf, long count)
 
     // �������M���Ă��Ȃ��Ȃ�A1�����ڂ͂����ő��M����
     // ���̌�͑��M���荞�݂ő��M����
-    if( SCI1.SSR.BIT.TEND == 1 ) {
+    if( SCI_PORT.SSR.BIT.TEND == 1 ) {
         getSendBuff( &put_data );
         put_sci1( put_data );
     }
@@ -123,7 +178,7 @@ long read(long fileno, unsigned char *buf, long count)
     if( recv_r == recv_w ) {
         do {
             /* Wait for receive */
-            while( get_sci1( &c ) != 1 );
+            while( get_sci1( &c ) != 1 ); // TODO
 
             switch( c ) {
             case '\b':  /* Back space */
@@ -182,8 +237,8 @@ int get_sci1( char *s )
 /************************************************************************/
 int put_sci1( char r )
 {
-    if( SCI1.SSR.BIT.TDRE == 1) {       // TDR�ɏ������݂��o����܂ő҂�
-        SCI1.TDR = r;
+    if( SCI_PORT.SSR.BIT.TDRE == 1) {       // TDR�ɏ������݂��o����܂ő҂�
+    	SCI_PORT.TDR = r;
         return 1;
     } else {
         /* ���M��(����̃f�[�^�͑��M�����ɏI��) */
@@ -202,13 +257,13 @@ void setSendBuff( char c )
     // �o�b�t�@���󂭂܂ő҂�
     while( SEND_BUFF_SIZE == send_count );
 
-    IEN(SCI1,TXI1) = 0;
+    IEN_SCI_TXI = 0;
 
     *send_w++ = c;
     if( send_w >= send_buff+SEND_BUFF_SIZE ) send_w = send_buff;
     send_count++;
 
-    IEN(SCI1,TXI1) = 1;
+    IEN_SCI_TXI = 1;
 }
 
 /************************************************************************/
@@ -221,55 +276,57 @@ int getSendBuff( char *c )
     volatile int    ret = 0;
 
     if( send_count ) {                  // �f�[�^������Ȃ�o�b�t�@����o��
-        IEN(SCI1,TXI1) = 0;
+    	IEN_SCI_TXI = 0;
 
         *c = *send_r++;
         if( send_r >= send_buff+SEND_BUFF_SIZE ) send_r = send_buff;
         send_count--;
         ret = 1;
 
-        IEN(SCI1,TXI1) = 1;
+        IEN_SCI_TXI = 1;
     }
     return ret;
 }
 
-/************************************************************************/
-/* SCI1 ERI1 Interrupt                                                  */
-/************************************************************************/
-#pragma interrupt Excep_SCI1_ERI1(vect=VECT_SCI1_ERI1)
-void Excep_SCI1_ERI1(void)
-{
-    recvError = SCI1.SSR.BYTE & 0x38;   // ��M�G���[�t���O�ǂݏo��
 
-    SCI1.SSR.BYTE = 0xc0 ;              // ��M�G���[�t���O�N���A
-    while( (SCI1.SSR.BYTE & 0x38) );    // �G���[�t���O�́g0�h�N���A�m�F
-    while( IR(SCI1,ERI1) );             // ��M�G���[�̊��荞�݃X�e�[�^�X�r�b�g��0���m�F
+/************************************************************************/
+/* SCI0 ERI1 Interrupt                                                  */
+/************************************************************************/
+#pragma interrupt Excep_SCI0_ERI0(vect=VECT_SCI_ERI)
+void Excep_SCI0_ERI0(void)
+{
+    recvError = SCI_PORT.SSR.BYTE & 0x38;   // ��M�G���[�t���O�ǂݏo��
+
+    SCI_PORT.SSR.BYTE = 0xc0 ;              // ��M�G���[�t���O�N���A
+    while( (SCI_PORT.SSR.BYTE & 0x38) );    // �G���[�t���O�́g0�h�N���A�m�F
+    while( IR_SCI_ERI );             // ��M�G���[�̊��荞�݃X�e�[�^�X�r�b�g��0���m�F
 }
 
 /************************************************************************/
-/* SCI1 RXI1 Interrupt                                                  */
+/* SCI0 RXI1 Interrupt                                                  */
 /************************************************************************/
-#pragma interrupt Excep_SCI1_RXI1(vect=VECT_SCI1_RXI1)
-void Excep_SCI1_RXI1(void)
+#pragma interrupt Excep_SCI0_RXI0(vect=VECT_SCI_RXI)
+void Excep_SCI0_RXI0(void)
 {
-    recvData = SCI1.RDR ;               // ��M�f�[�^�ǂݏo��
+    recvData = SCI_PORT.RDR ;               // ��M�f�[�^�ǂݏo��
     recvFlag = 1 ;                      // �t���O�ϐ����P�ɃZ�b�g
 }
 
 /************************************************************************/
-/* SCI1 TXI1 Interrupt                                                  */
+/* SCI0 TXI1 Interrupt                                                  */
 /************************************************************************/
-#pragma interrupt Excep_SCI1_TXI1(vect=VECT_SCI1_TXI1)
-void Excep_SCI1_TXI1(void)
+#pragma interrupt Excep_SCI0_TXI0(vect=VECT_SCI_TXI)
+void Excep_SCI0_TXI0(void)
 {
     char   c;
     int    ret;
 
     ret = getSendBuff( &c );            // �f�[�^�擾
     if( ret ) {
-        SCI1.TDR = c;                   // �f�[�^����Ȃ瑗�M
+        SCI_PORT.TDR = c;                   // �f�[�^����Ȃ瑗�M
     }
 }
+
 
 /************************************************************************/
 /* end of file                                                          */
