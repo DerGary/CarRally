@@ -62,8 +62,7 @@
 #define DETECT_SHARP_CORNER 4
 #define SHARP_CORNER_LEFT 5
 #define SHARP_CORNER_RIGHT 6
-#define WAIT_LEFT_LINE 8
-#define WAIT_RIGHT_LINE 9
+#define WAIT_HALF_LINE 8
 #define SEARCH_LINE_RIGHT 10
 #define SEARCH_LINE_LEFT 11
 
@@ -79,6 +78,10 @@ int dasKalman(int measurement);
 int getSteeringAngle(SensorInfo sensorResult);
 int getSteeringAngleNew(int sensorResult);
 void setSpeed(int handleAngle, int divisor);
+void setSpeedAndHandleAngle(int maxSpeed);
+int setHandleAngleWithMask(unsigned char mask);
+int setHandleAngle();
+int setHandleAngleFromResult(SensorInfo sensorResult);
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
@@ -86,6 +89,7 @@ unsigned long cnt0;
 unsigned long cnt1;
 unsigned long cnt2 = 1001;
 int pattern;
+int nextPattern = 0;
 
 int previousHandleAngle = 0;
 int trackPosition = 0;
@@ -195,12 +199,14 @@ void main(void)
 						break;
 					case 0xf0: // left line detected but with only 4 leds because the car could be a bit of center
 					case LEFT_LINE:
-						pattern = WAIT_LEFT_LINE;
+						pattern = WAIT_HALF_LINE;
+						nextPattern = LEFT_LINE;
 						cnt1 = 0;
 						break;
 					case 0x0f: // right line detected but with only 4 leds because the car could be a bit of center
 					case RIGHT_LINE:
-						pattern = WAIT_RIGHT_LINE;
+						pattern = WAIT_HALF_LINE;
+						nextPattern = RIGHT_LINE;
 						cnt1 = 0;
 						break;
 					default:
@@ -209,7 +215,7 @@ void main(void)
 						break;
 				}
 				break;
-			case WAIT_LEFT_LINE:
+			case WAIT_HALF_LINE:
 				// it can happen that we are at a cross line but the 4/5 leds at the left get
 				// triggered at first and we detect the cross line as a left line. To prevent
 				// this we wait a small amount and get a new reading from the sensors, if the
@@ -221,33 +227,12 @@ void main(void)
 				if (readSensor() == CROSS_LINE)
 				{
 					pattern = CROSS_LINE;
-					cnt1 = 0;
 				}
 				else
 				{
-					pattern = LEFT_LINE;
-					cnt1 = 0;
+					pattern = nextPattern;
 				}
-				break;
-			case WAIT_RIGHT_LINE:
-				// it can happen that we are at a cross line but the 4/5 leds at the right get
-				// triggered at first and we detect the cross line as a right line. To prevent
-				// this we wait a small amount and get a new reading from the sensors, if the
-				// new reading is now a cross line than the previous reading was false and we
-				// go into the cross line state otherwise it really was a right line and we go
-				// into the left line state.
-				timer(10);
-				led_out(0x2);
-				if (readSensor() == CROSS_LINE)
-				{
-					pattern = CROSS_LINE;
-					cnt1 = 0;
-				}
-				else
-				{
-					pattern = RIGHT_LINE;
-					cnt1 = 0;
-				}
+				cnt1 = 0;
 				break;
 			case CROSS_LINE:
 			{
@@ -264,7 +249,6 @@ void main(void)
 					motor(10, 60);
 					pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
-					break;
 				}
 				else if (maskSensorInfo(sensorResult, MASK0_4).Byte == 0x0f && cnt1 > 200)
 				{
@@ -276,27 +260,25 @@ void main(void)
 					motor(60, 10);
 					pattern = SHARP_CORNER_RIGHT;
 					cnt1 = 0;
-					break;
 				}
 				else
 				{
 					// as long as we haven't detected in which direction we have to steer,
 					// we should still follow the line.
-					handle(getSteeringAngle(readSensorInfo()));
 					if (cnt1 < driveTimeForSharpTurns[NUM_SHARP_TURN]){
 						// drive with the same speed than before
-						motor(100,100);
+						setSpeedAndHandleAngle(100);
 					}
 					else if (cnt1 < breakTimeForSharpTurns[NUM_SHARP_TURN] + driveTimeForSharpTurns[NUM_SHARP_TURN])
 					{
 						// in the first 200 ms we stop the motors completely to break even
 						// harder to faster get to the desired speed of 40%. Eventually we
 						// could break with negative values as well.
-						motor(-100, -100);
+						setSpeedAndHandleAngle(-100);
 					}
 					else
 					{
-						motor(40, 40);
+						setSpeedAndHandleAngle(40);
 					}
 					emergencyExit();
 				}
@@ -350,19 +332,15 @@ void main(void)
 				break;
 			case LEFT_LINE:
 				led_out(0x1);
-
 				if (readSensor() == 0x00)
 				{
 					// after we lost the line we steer 25° in the direction where the line should be and go into pattern search line
 					pattern = SEARCH_LINE_LEFT;
-					break;
 				}
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					handle(getSteeringAngle(readSensorInfo()));
-					motor(40, 40);
-
+					setSpeedAndHandleAngle(40);
 				}
 				break;
 			case RIGHT_LINE:
@@ -371,19 +349,17 @@ void main(void)
 				{
 					// after we lost the line we go into pattern search line
 					pattern = SEARCH_LINE_RIGHT;
-					break;
 				}
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					handle(getSteeringAngle(readSensorInfo()));
-					motor(40, 40);
+					setSpeedAndHandleAngle(40);
 				}
 				break;
 			case SEARCH_LINE_LEFT:
 			{
 				handle(-25);
-				motor(40, 40);
+				setSpeed(-25, 40);
 
 				SensorInfo result = readSensorInfoWithMask(MASK2_4);
 				led_out(0x3);
@@ -398,14 +374,13 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					traceMask = RIGHT_MASK;
 					cnt2 = 0;
-					break;
 				}
 				break;
 			}
 			case SEARCH_LINE_RIGHT:
 			{
 				handle(25);
-				motor(40, 40);
+				setSpeed(25, 40);
 
 				SensorInfo result = readSensorInfoWithMask(MASK4_2);
 				led_out(0x3);
@@ -420,7 +395,6 @@ void main(void)
 					pattern = NORMAL_TRACE;
 					traceMask = LEFT_MASK;
 					cnt2 = 0;
-					break;
 				}
 				break;
 			}
@@ -433,6 +407,25 @@ void main(void)
 	}
 }
 
+void setSpeedAndHandleAngle(int maxSpeed){
+	int angle = setHandleAngle();
+	setSpeed(angle, maxSpeed);
+}
+
+int setHandleAngleWithMask(unsigned char mask){
+	SensorInfo maskedSensorResult = readSensorInfoWithMask(mask);
+	return setHandleAngleFromResult(maskedSensorResult);
+}
+int setHandleAngle(){
+	return setHandleAngleWithMask(MASK4_4);
+}
+int setHandleAngleFromResult(SensorInfo sensorResult){
+	int handleAngle = getSteeringAngle(sensorResult);
+//	handleAngle = dasKalman(handleAngle);
+	handle(handleAngle);
+	previousHandleAngle = handleAngle;
+	return handleAngle;
+}
 
 void traceTrack()
 {
@@ -464,12 +457,10 @@ void traceTrack()
 			traceMask = MASK0_4;
 
 		handle(handleAngle);
-		setSpeed(handleAngle, 10);
+		setSpeed(handleAngle, 40);
 		return;
 	}
-	int handleAngle = getSteeringAngle(maskedSensorResult);
-
-//	handleAngle = dasKalman(handleAngle);
+	int handleAngle = setHandleAngleFromResult(maskedSensorResult);
 
 	// to set the mask we must check the masked result because an unmasked result would
 	// return a wrong angle or zero if the 2 outer most sensors are active which would
@@ -489,9 +480,7 @@ void traceTrack()
 		trackPosition = RIGHT;
 	}
 
-	handle(handleAngle);
-	previousHandleAngle = handleAngle;
-	setSpeed(handleAngle, 1);
+	setSpeed(handleAngle, 100);
 	cnt1 = 0;
 }
 
@@ -510,55 +499,10 @@ int dasKalman(int measurement){
 	return estimate;
 }
 
-int getSteeringAngleOld(SensorInfo sensorResult) {
-	int baseSteering;
-	switch(sensorResult.Byte) {
-		case 0x38: baseSteering = -2; break; //0b0011 1000
-		case 0x1c: baseSteering = 2; break;  //0b0001 1100
-
-		case 0x08: baseSteering = 3; break;  //0b0000 1000
-		case 0x04: baseSteering = 12; break; //0b0000 0100
-		case 0x02: baseSteering = 28; break; //0b0000 0010
-		case 0x01: baseSteering = 44; break; //0b0000 0001
-
-		case 0x0C: baseSteering = 8; break;  //0b0000 1100
-		case 0x06: baseSteering = 20; break; //0b0000 0110
-		case 0x03: baseSteering = 36; break; //0b0000 0011
-
-		case 0x0e: baseSteering = 12; break; //0b0000 1110
-		case 0x07: baseSteering = 28; break; //0b0000 0111
-
-		case 0x0f: baseSteering = 20; break; //0b0000 1111
-
-
-		case 0x10: baseSteering = -3; break;  //0b0001 0000
-		case 0x20: baseSteering = -12; break; //0b0010 0000
-		case 0x40: baseSteering = -28; break; //0b0100 0000
-		case 0x80: baseSteering = -44; break; //0b1000 0000
-
-		case 0x30: baseSteering = -8;  break; //0b0011 0000
-		case 0x60: baseSteering = -20; break; //0b0110 0000
-		case 0xc0: baseSteering = -36; break; //0b1100 0000
-
-		case 0x70: baseSteering = -12; break; //0b0111 0000
-		case 0xe0: baseSteering = -28; break; //0b1110 0000
-
-		case 0xf0: baseSteering = -20; break; //0b1111 0000
-
-		case 0xf8: baseSteering = -12; break; //0b1111 1000
-		case 0x78: baseSteering = -8; break; //0b0111 1000
-
-		case 0x1f: baseSteering = 12; break; //0b0001 1111
-		case 0x1e: baseSteering = 8; break; //0b0001 1110
-
-		//0b0001 1000
-		default: baseSteering = 0; break;
-	}
-	return baseSteering;
-}
-int steeringTable[] = { 0, 3, 8, 12, 20, 28, 36, 44 };
 int getSteeringAngle(SensorInfo sensorInfoResult)
 {
+	static int steeringTable[] = { 0, 3, 8, 12, 20, 28, 36, 44 };
+
 	int sensorResult = sensorInfoResult.Byte;
 	if (sensorResult == 0)
 		return steeringTable[0];
@@ -589,15 +533,17 @@ int getSteeringAngle(SensorInfo sensorInfoResult)
 		return steeringTable[idx];
 }
 
-void setSpeed(int handleAngle, int divisor)
+void setSpeed(int handleAngle, int maxSpeed)
 {
-	int angleFactor = abs(handleAngle) * 100 / 45;
+	int angleFactor = abs(handleAngle) * abs(maxSpeed) / 45;
 
-	int fasterSpeed = 100 - angleFactor * 0.1f;
+	int fasterSpeed = abs(maxSpeed) - angleFactor * 0.1f;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 200.0f));
 
-	fasterSpeed = fasterSpeed / divisor;
-	slowerSpeed = slowerSpeed / divisor;
+	if(maxSpeed < 0){
+		fasterSpeed = -fasterSpeed;
+		slowerSpeed = -slowerSpeed;
+	}
 
 	int motorSpeedLeft;
 	int motorSpeedRight;
