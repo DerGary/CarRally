@@ -97,11 +97,19 @@ int traceMask = NORMAL_MASK;
 
 /* 90° Turn Counter */
 int sharpTurnCounter = 0;
-#define TOTAL_SHARP_TURNS 3
+#define TOTAL_SHARP_TURNS 4
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 
-int driveTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 0, 400, 100 };
-int breakTimeForSharpTurns[TOTAL_SHARP_TURNS] = { 650, 100, 300 };
+int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 400, 100 };
+int breakTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
+int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 400, 100 };
+int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
+int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 400, 100 };
+int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
+
+int* driveTimeForSharpTurns = driveTimeForSharpTurnsCar1;
+int* breakTimeForSharpTurns = breakTimeForSharpTurnsCar1;
+
 
 
 void emergencyExit(void)
@@ -208,12 +216,14 @@ void main(void)
 						cnt1 = 0;
 						break;
 					case 0xf0: // left line detected but with only 4 leds because the car could be a bit of center
+					case 0xfc:
 					case LEFT_LINE:
 						pattern = WAIT_HALF_LINE;
 						nextPattern = LEFT_LINE;
 						cnt1 = 0;
 						break;
 					case 0x0f: // right line detected but with only 4 leds because the car could be a bit of center
+					case 0x3f:
 					case RIGHT_LINE:
 						pattern = WAIT_HALF_LINE;
 						nextPattern = RIGHT_LINE;
