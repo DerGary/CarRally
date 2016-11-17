@@ -14,11 +14,11 @@
 
 /* Constant settings */
 #define PWM_CYCLE       24575           /* Motor PWM period (16ms)     */
-#define CAR_1 2284
-#define CAR_2 2291
-#define CAR_3 2321
-#define CAR_4 2370
-#define SERVO_CENTER    CAR_1          /* Servo center value          */
+#define SERVO_CENTER_CAR_1 2284
+#define SERVO_CENTER_CAR_2 2291
+#define SERVO_CENTER_CAR_3 2321
+#define SERVO_CENTER_CAR_4 2370
+#define SERVO_CENTER    SERVO_CENTER_CAR_1          /* Servo center value          */
 #define HANDLE_STEP     13              /* 1 degree value              */
 
 SensorInfo readSensorInfo()

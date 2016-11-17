@@ -201,40 +201,41 @@ void main(void)
 				break;
 			}
 			case NORMAL_TRACE:
+			{
 				/* Normal trace */
-				if(cnt2 < 250){ // 250 ms after a cross line / left line / right line only use normal trace
+				if (cnt2 < 250)
+				{ // 250 ms after a cross line / left line / right line only use normal trace
 					PRINT_L("normal trace ignore cross/left/right line");
 					PRINT_I(cnt2);
 					led_out(0x0);
 					traceTrack();
 					break;
 				}
-				switch (readSensorInfo().Byte)
+				SensorInfo sensorResult = readSensorInfo();
+				if (sensorResult.Byte == CROSS_LINE)
 				{
-					case CROSS_LINE:
-						pattern = CROSS_LINE;
-						cnt1 = 0;
-						break;
-					case 0xf0: // left line detected but with only 4 leds because the car could be a bit of center
-					case 0xfc:
-					case LEFT_LINE:
-						pattern = WAIT_HALF_LINE;
-						nextPattern = LEFT_LINE;
-						cnt1 = 0;
-						break;
-					case 0x0f: // right line detected but with only 4 leds because the car could be a bit of center
-					case 0x3f:
-					case RIGHT_LINE:
-						pattern = WAIT_HALF_LINE;
-						nextPattern = RIGHT_LINE;
-						cnt1 = 0;
-						break;
-					default:
-						led_out(0x0);
-						traceTrack();
-						break;
+					pattern = CROSS_LINE;
+					cnt1 = 0;
+				}
+				else if (maskSensorInfo(sensorResult, MASK4_0).Byte == LEFT_LINE)
+				{
+					pattern = WAIT_HALF_LINE;
+					nextPattern = LEFT_LINE;
+					cnt1 = 0;
+				}
+				else if (maskSensorInfo(sensorResult, MASK0_4).Byte == RIGHT_LINE)
+				{
+					pattern = WAIT_HALF_LINE;
+					nextPattern = RIGHT_LINE;
+					cnt1 = 0;
+				}
+				else
+				{
+					led_out(0x0);
+					traceTrack();
 				}
 				break;
+			}
 			case WAIT_HALF_LINE:
 				// it can happen that we are at a cross line but the 4/5 leds at the left get
 				// triggered at first and we detect the cross line as a left line. To prevent
