@@ -100,11 +100,11 @@ int sharpTurnCounter = 0;
 #define TOTAL_SHARP_TURNS 4
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 
-int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 400, 100 };
-int breakTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
-int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 400, 100 };
+int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 350, 100 };
+int breakTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 650, 	200, 200, 300 };
+int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
-int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 400, 100 };
+int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
 
 int* driveTimeForSharpTurns = driveTimeForSharpTurnsCar1;
@@ -304,7 +304,7 @@ void main(void)
 					}
 					else
 					{
-						setSpeedAndHandleAngle(40);
+						setSpeedAndHandleAngle(60);
 						PRINT("wait for sharp corner #%d cnt1 = %d drive slow", NUM_SHARP_TURN, cnt1);
 					}
 					emergencyExit();
@@ -384,7 +384,7 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(40);
+					setSpeedAndHandleAngle(60);
 					PRINT_L("wait for line change left");
 				}
 				break;
@@ -399,14 +399,14 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(40);
+					setSpeedAndHandleAngle(60);
 					PRINT_L("wait for line change left");
 				}
 				break;
 			case SEARCH_LINE_LEFT:
 			{
-				handle(-25);
-				setSpeed(-25, 40);
+				handle(-27);
+				setSpeed(-27, 40);
 
 				SensorInfo result = readSensorInfo();
 				SensorInfo maskedResult = maskSensorInfo(result, MASK2_4);
@@ -429,8 +429,8 @@ void main(void)
 			}
 			case SEARCH_LINE_RIGHT:
 			{
-				handle(25);
-				setSpeed(25, 40);
+				handle(27);
+				setSpeed(27, 40);
 
 
 				SensorInfo result = readSensorInfo();
