@@ -145,7 +145,7 @@ void main(void)
 		{
 			case WAIT_FOR_SWITCH:
 				/* Wait for switch input */
-				PRINT_L("wait for switch");
+				//PRINT_L("wait for switch");
 				if (pushsw_get())
 				{
 					pattern = WAIT_FOR_STARTBAR;
@@ -167,7 +167,7 @@ void main(void)
 				break;
 			case WAIT_FOR_STARTBAR:
 				/* Check if start bar is open */
-				PRINT_L("wait for startbar");
+				//PRINT_L("wait for startbar");
 				if (!startbar_get())
 				{
 					/* Start!! */
@@ -192,12 +192,11 @@ void main(void)
 			case WAIT_FOR_LOST_TRACK:
 			{
 				unsigned char sensorResult = readSensor();
-				PRINT_L("wait for lost track");
-				PRINT_I(sensorResult);
 				if (sensorResult != 0x00)
 				{
 					pattern = NORMAL_TRACE;
 				}
+				PRINT("wait for lost track, sensor = %d", sensorResult);
 				break;
 			}
 			case NORMAL_TRACE:
@@ -205,10 +204,9 @@ void main(void)
 				/* Normal trace */
 				if (cnt2 < 250)
 				{ // 250 ms after a cross line / left line / right line only use normal trace
-					PRINT_L("normal trace ignore cross/left/right line");
-					PRINT_I(cnt2);
 					led_out(0x0);
 					traceTrack();
+					PRINT("normal trace ignore cross/left/right line, cnt2 = %d", cnt2);
 					break;
 				}
 				SensorInfo sensorResult = readSensorInfo();
@@ -247,13 +245,13 @@ void main(void)
 				led_out(0x2);
 				if (readSensor() == CROSS_LINE)
 				{
-					PRINT_L("wait half line => crossline");
 					pattern = CROSS_LINE;
+					PRINT_L("wait half line => crossline");
 				}
 				else
 				{
-					PRINT("wait half line => %d\r\n", nextPattern);
 					pattern = nextPattern;
+					PRINT("wait half line => %d\r\n", nextPattern);
 				}
 				cnt1 = 0;
 				break;
@@ -268,11 +266,11 @@ void main(void)
 					// the left ones detect the line it means it is a left turn. So we set
 					// the handle angle to the highest that the car can handle and also set
 					// the motor to steering.
-					PRINT_L("90° left");
 					handle(-46);
 					motor(10, 60);
 					pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
+					PRINT_L("90° left");
 				}
 				else if (maskSensorInfo(sensorResult, MASK0_4).Byte == 0x0f && cnt1 > 200)
 				{
@@ -280,11 +278,11 @@ void main(void)
 					// the right ones detect the line it means it is a right turn. So we set
 					// the handle angle to the highest that the car can handle and also set
 					// the motor to steering.
-					PRINT_L("90° right");
 					handle(46);
 					motor(60, 10);
 					pattern = SHARP_CORNER_RIGHT;
 					cnt1 = 0;
+					PRINT_L("90° right");
 				}
 				else
 				{
@@ -411,7 +409,6 @@ void main(void)
 
 				SensorInfo result = readSensorInfo();
 				SensorInfo maskedResult = maskSensorInfo(result, MASK2_4);
-				PRINT("search line left, sensor %d, masked %d", result, maskedResult);
 				led_out(0x3);
 				if (maskedResult.Byte != 0x00)
 				{
@@ -421,11 +418,12 @@ void main(void)
 					// the outer most sensor. We also disabled the second most outer sensor to prevent the normal trace
 					// to enter the line switch state again if the outer most sensor would turn on because it gets another
 					// reading.
-					PRINT_L("search line left => normal trace");
 					pattern = NORMAL_TRACE;
 					traceMask = RIGHT_MASK;
 					cnt2 = 0;
+					PRINT_L("search line left => normal trace");
 				}
+				PRINT("search line left, sensor %d, masked %d", result, maskedResult);
 				break;
 			}
 			case SEARCH_LINE_RIGHT:
@@ -436,7 +434,6 @@ void main(void)
 
 				SensorInfo result = readSensorInfo();
 				SensorInfo maskedResult = maskSensorInfo(result, MASK4_2);
-				PRINT("search line right, sensor %d, masked %d", result, maskedResult);
 				led_out(0x3);
 				if (maskedResult.Byte != 0x00)
 				{
@@ -446,11 +443,12 @@ void main(void)
 					// the outer most sensor. We also disabled the second most outer sensor to prevent the normal trace
 					// to enter the line switch state again if the outer most sensor would turn on because it gets another
 					// reading.
-					PRINT_L("search line right => normal trace");
 					pattern = NORMAL_TRACE;
 					traceMask = LEFT_MASK;
 					cnt2 = 0;
+					PRINT_L("search line right => normal trace");
 				}
+				PRINT("search line right, sensor %d, masked %d", result, maskedResult);
 				break;
 			}
 			default:
@@ -478,7 +476,10 @@ int setHandleAngleFromResult(SensorInfo sensorResult){
 	int handleAngle = getSteeringAngle(sensorResult);
 //	handleAngle = interpolateAngle(handleAngle);
 	handle(handleAngle);
-	previousHandleAngle = handleAngle;
+	if(previousHandleAngle != handleAngle){
+		PRINT("Steering angle changed from %d to %d", previousHandleAngle, handleAngle);
+		previousHandleAngle = handleAngle;
+	}
 	return handleAngle;
 }
 
@@ -588,7 +589,8 @@ int getSteeringAngle(SensorInfo sensorInfoResult)
 	else
 		return steeringTable[idx];
 }
-
+int previousMotorSpeedRight = 0;
+int previousMotorSpeedLeft = 0;
 void setSpeed(int handleAngle, int maxSpeed)
 {
 	int angleFactor = abs(handleAngle) * abs(maxSpeed) / 45;
@@ -612,6 +614,9 @@ void setSpeed(int handleAngle, int maxSpeed)
 	{
 		motorSpeedRight = slowerSpeed;
 		motorSpeedLeft = fasterSpeed;
+	}
+	if(previousMotorSpeedLeft != motorSpeedLeft && previousMotorSpeedRight != motorSpeedRight){
+		PRINT("Motor Speed changed from left = %d right = %d to left = %d right = %d", previousMotorSpeedLeft, previousMotorSpeedRight, motorSpeedLeft, motorSpeedRight);
 	}
 	motor(motorSpeedLeft, motorSpeedRight);
 }
