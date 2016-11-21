@@ -23,7 +23,7 @@ void debug_init()
 	setbuf(stdout, NULL);
 #endif
 
-	memset(&MsgBuffer, 0, sizeof(Message)*sizeof(MsgBuffer));
+	memset(&MsgBuffer, 0, sizeof(Message)*MsgBufferSize);
 
 	init_sci1_printf( SPEED_9600 );
 	setpsw_i();

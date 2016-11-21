@@ -90,7 +90,7 @@ unsigned long cnt0;
 unsigned long cnt1;
 unsigned long cnt2 = 1001;
 unsigned char nextPattern = 0;
-unsigned char pattern;
+unsigned char pattern = WAIT_FOR_SWITCH;
 char motorLeft;
 char motorRight;
 char angle;
@@ -154,7 +154,7 @@ void main(void)
 	while (1)
 	{
 		sensor = readSensorInfo();
-		if (pushsw_get())
+		if (pattern != WAIT_FOR_SWITCH && pushsw_get())
 		{
 			sendDebugBuffer();
 		}
