@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarSerialInterpreter", "CarSerialInterpreter\CarSerialInterpreter.csproj", "{06549503-3370-428F-9092-E5B0C2881865}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarSerialInterpreterConsole", "CarSerialInterpreterConsole\CarSerialInterpreterConsole.csproj", "{3A48B19C-3C3C-4555-AE16-278867B84561}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{06549503-3370-428F-9092-E5B0C2881865}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06549503-3370-428F-9092-E5B0C2881865}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06549503-3370-428F-9092-E5B0C2881865}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06549503-3370-428F-9092-E5B0C2881865}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A48B19C-3C3C-4555-AE16-278867B84561}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A48B19C-3C3C-4555-AE16-278867B84561}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A48B19C-3C3C-4555-AE16-278867B84561}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A48B19C-3C3C-4555-AE16-278867B84561}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
