@@ -148,12 +148,12 @@ long write(long fileno, const unsigned char *buf, long count)
 {
     char   put_data;
 
-    if( *buf == '\n' )  {
-        setSendBuff( '\r' );
-    } else if( *buf == '\b' ) {
-        setSendBuff( '\b' );
-        setSendBuff( ' ' );
-    }
+//    if( *buf == '\n' )  {
+//        setSendBuff( '\r' );
+//    } else if( *buf == '\b' ) {
+//        setSendBuff( '\b' );
+//        setSendBuff( ' ' );
+//    }
 
     setSendBuff( *buf );
 
