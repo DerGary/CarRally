@@ -31,6 +31,9 @@ typedef struct
 void debug_init();
 void _debugBreak(int pc);
 
+#define DBG_MSG(_msg_, _data_) dbglog(pattern, angle, motorLeft, motorRight, sensor, mask, _msg_, _data_)
+#define DBG() DBG_MSG(0, 0)
+
 void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
 void dbglog(Message msg);
 
