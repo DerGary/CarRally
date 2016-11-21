@@ -154,6 +154,10 @@ void main(void)
 	while (1)
 	{
 		sensor = readSensorInfo();
+		if (pushsw_get())
+		{
+			sendDebugBuffer();
+		}
 		switch (pattern)
 		{
 			case WAIT_FOR_SWITCH:
