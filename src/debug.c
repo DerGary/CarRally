@@ -6,6 +6,9 @@
  */
 
 #include "debug.h"
+#include <string.h>
+
+static Message prevMsg;
 
 void _debugBreakPC(int pc);
 
@@ -18,8 +21,49 @@ void debug_init()
 	setbuf(stdout, NULL);
 #endif
 
+	memset(&prevMsg, 0, sizeof(Message));
+
 	init_sci1_printf( SPEED_9600 );
 	setpsw_i();
+}
+
+void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData)
+{
+	Message msg;
+
+	msg.Pattern	= Pattern;
+	msg.Angle	= Angle;
+	msg.SpeedLeft = SpeedLeft;
+	msg.SpeedRight= SpeedRight;
+	msg.Sensor = Sensor;
+	msg.SensorMask = SensorMask;
+	msg.MessageByte = MessageByte;
+	msg.MessageData = MessageData;
+
+	dbglog(msg);
+}
+
+void dbglog(Message msg)
+{
+	char equal =
+			   msg.Pattern	== prevMsg.Pattern
+			&& msg.Angle	== prevMsg.Angle
+			&& msg.SpeedLeft == prevMsg.SpeedLeft
+			&& msg.SpeedRight== prevMsg.SpeedRight
+			&& msg.Sensor == prevMsg.Sensor
+			&& msg.SensorMask == prevMsg.SensorMask
+			&& msg.MessageByte == prevMsg.MessageByte
+			&& msg.MessageData == prevMsg.MessageData;
+
+	if (!equal)
+	//if (!memcmp(&prevMsg, &msg, sizeof(Message)))
+	{
+		//DebugBuffer[BufferPosition] = msg;
+
+		fwrite(&msg, sizeof(Message), 1, stdout);
+		prevMsg = msg;
+		//BufferPosition++;
+	}
 }
 
 void _debugBreak(int pc)

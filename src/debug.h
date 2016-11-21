@@ -15,8 +15,24 @@
 #include <machine.h>
 #include "printf_lib.h"
 
+typedef struct
+{
+	unsigned char Pattern;
+	         char Angle;
+	         char SpeedLeft;
+	         char SpeedRight;
+	unsigned char Sensor;
+	unsigned char SensorMask;
+	unsigned char MessageByte;
+	unsigned char MessageData;
+		    short EndOfMessage;
+} Message;
+
 void debug_init();
 void _debugBreak(int pc);
+
+void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
+void dbglog(Message msg);
 
 #if ENABLE_DEBUG
 // Prints a string like printf
