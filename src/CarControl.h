@@ -142,7 +142,7 @@ void led_out(unsigned char led)
 /*        Here, 0 is stopped, 100 is forward, and -100 is reverse.     */
 /* Return value:    None                                               */
 /***********************************************************************/
-void motor(int accele_l, int accele_r)
+void setMotor(int accele_l, int accele_r)
 {
 	int sw_data;
 
@@ -181,7 +181,7 @@ void motor(int accele_l, int accele_r)
 /*              -90: 90-degree turn to left, 0: straight,              */
 /*               90: 90-degree turn to right                           */
 /***********************************************************************/
-void handle(int angle)
+void setServo(int angle)
 {
 	/* When the servo move from left to right in reverse, replace "-" with "+". */
 	MTU3.TGRD = SERVO_CENTER - angle * HANDLE_STEP;
