@@ -8,7 +8,9 @@
 #include "debug.h"
 #include <string.h>
 
-static Message prevMsg;
+#define MsgBufferSize 100
+static size_t BufferPos = 0;
+static Message MsgBuffer[MsgBufferSize];
 
 void _debugBreakPC(int pc);
 
@@ -21,7 +23,7 @@ void debug_init()
 	setbuf(stdout, NULL);
 #endif
 
-	memset(&prevMsg, 0, sizeof(Message));
+	memset(&MsgBuffer, 0, sizeof(Message)*sizeof(MsgBuffer));
 
 	init_sci1_printf( SPEED_9600 );
 	setpsw_i();
@@ -45,6 +47,8 @@ void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sens
 
 void dbglog(Message msg)
 {
+	Message prevMsg = MsgBuffer[BufferPos];
+
 	char equal =
 			   msg.Pattern	== prevMsg.Pattern
 			&& msg.Angle	== prevMsg.Angle
@@ -56,14 +60,21 @@ void dbglog(Message msg)
 			&& msg.MessageData == prevMsg.MessageData;
 
 	if (!equal)
-	//if (!memcmp(&prevMsg, &msg, sizeof(Message)))
 	{
-		//DebugBuffer[BufferPosition] = msg;
+		BufferPos++;
+		if (BufferPos >= MsgBufferSize)
+		{
+			BufferPos = 0;
+		}
 
-		fwrite(&msg, sizeof(Message), 1, stdout);
-		prevMsg = msg;
-		//BufferPosition++;
+		MsgBuffer[BufferPos] = msg;
+		//fwrite(&msg, sizeof(Message), 1, stdout);
 	}
+}
+
+void sendDebugBuffer()
+{
+	fwrite(&MsgBuffer, sizeof(Message), MsgBufferSize, stdout);
 }
 
 void _debugBreak(int pc)

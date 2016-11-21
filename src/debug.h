@@ -36,6 +36,8 @@ void _debugBreak(int pc);
 
 void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
 void dbglog(Message msg);
+void sendDebugBuffer();
+
 
 #if ENABLE_DEBUG
 // Prints a string like printf
