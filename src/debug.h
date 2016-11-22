@@ -32,9 +32,9 @@ typedef struct
 void debug_init();
 void _debugBreak(int pc);
 
-#define DBG() dbglog(&s)
+#define DBG() dbglog(&state)
 
-void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
+//void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
 void dbglog(Message* newMsg);
 void sendDebugBuffer();
 
