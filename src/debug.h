@@ -32,7 +32,7 @@ typedef struct
 void debug_init();
 void _debugBreak(int pc);
 
-#define DBG() dbglog(&state)
+
 
 //void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
 void dbglog(Message* newMsg);
@@ -52,6 +52,9 @@ void sendDebugBuffer();
 
 // Prints the current file, linenumber and function name
 #define PRINT_FX()		printf("%s:%d: %s\r\n",      __FILE__, __LINE__, __func__)
+
+#define DBG() dbglog(&state)
+#define SENDDEBUG() sendDebugBuffer()
 #else
 #define PRINT(_FORMAT, ...) (void)0
 #define PRINT_I(_INT)		(void)0
@@ -59,6 +62,9 @@ void sendDebugBuffer();
 #define PRINT_S(_STRING)	(void)0
 #define PRINT_L(_LITERAL)   (void)0
 #define PRINT_FX()		    (void)0
+
+#define DBG() (void)0
+#define SENDDEBUG() (void)0
 #endif
 // Prints EXPR, waits for user input and then executes EXPR
 #define BREAK(__EXPR__) printf("Break at %s:%d: %s\r\n", __FILE__, __LINE__, #__EXPR__); while (get_sci1(NULL)!=1) ; __EXPR__

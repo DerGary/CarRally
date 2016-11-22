@@ -124,7 +124,7 @@ void motor(int speedMotorLeft, int speedMotorRight){
 
 void emergencyExit(void)
 {
-	if (!readSensor())
+	if (!state.Sensor.Byte)
 	{
 		motor(0, 0);
 		state.Pattern = WAIT_FOR_LOST_TRACK;
@@ -256,6 +256,7 @@ void main(void)
 				// go into the cross line state otherwise it really was a left line and we go
 				// into the left line state.
 				timer(10);
+				state.Sensor = readSensorInfo();
 				led_out(0x2);
 				if (state.Sensor.Byte == CROSS_LINE)
 				{
@@ -464,7 +465,7 @@ void setSpeedAndHandleAngle(int maxSpeed){
 }
 
 int setHandleAngleWithMask(unsigned char mask){
-	SensorInfo maskedSensorResult = readSensorInfoWithMask(mask);
+	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, mask);
 	return setHandleAngleFromResult(maskedSensorResult);
 }
 int setHandleAngle(){
@@ -607,9 +608,6 @@ void setSpeed(int handleAngle, int maxSpeed)
 	{
 		motorSpeedRight = slowerSpeed;
 		motorSpeedLeft = fasterSpeed;
-	}
-	if(previousMotorSpeedLeft != motorSpeedLeft && previousMotorSpeedRight != motorSpeedRight){
-		PRINT("Motor Speed changed from left = %d right = %d to left = %d right = %d", previousMotorSpeedLeft, previousMotorSpeedRight, motorSpeedLeft, motorSpeedRight);
 	}
 	motor(motorSpeedLeft, motorSpeedRight);
 }
