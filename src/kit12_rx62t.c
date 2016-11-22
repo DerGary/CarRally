@@ -51,8 +51,8 @@
 #define RIGHT_MASK MASK2_4
 #define NORMAL_MASK MASK4_4
 
-#define RIGHT_LINE 	0x1f //O O O X  X X X X
-#define LEFT_LINE 	0xf8 //X X X X  X O O O
+#define RIGHT_LINE 	0x0f //O O O 0  X X X X
+#define LEFT_LINE 	0xf0 //X X X X  0 O O O
 #define CROSS_LINE  0xff //X X X X  X X X X
 
 #define WAIT_FOR_SWITCH 0
@@ -109,15 +109,15 @@ int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
 int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
 
-int* driveTimeForSharpTurns = driveTimeForSharpTurnsCar1;
-int* breakTimeForSharpTurns = breakTimeForSharpTurnsCar1;
+int* driveTimeForSharpTurns = driveTimeForSharpTurnsCar3;
+int* breakTimeForSharpTurns = breakTimeForSharpTurnsCar3;
 
 void handle(int steeringAngle){
 	setServo(steeringAngle);
 	s.Angle = steeringAngle;
 }
 void motor(int speedMotorLeft, int speedMotorRight){
-	setMotor(s.MotorLeft, s.MotorRight);
+	setMotor(speedMotorLeft, speedMotorRight);
 	s.MotorLeft = speedMotorLeft;
 	s.MotorRight = speedMotorRight;
 }
@@ -212,7 +212,6 @@ void main(void)
 				{
 					s.Pattern = NORMAL_TRACE;
 				}
-				PRINT("wait for lost track, sensor = %d", sensorResult);
 				break;
 			}
 			case NORMAL_TRACE:
@@ -273,7 +272,7 @@ void main(void)
 			{
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
-				if (maskSensorInfo(s.Sensor, MASK4_0).Byte == 0xf0 && cnt1 > 200)
+				if (maskSensorInfo(s.Sensor, MASK4_0).Byte == LEFT_LINE && cnt1 > 200)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -284,7 +283,7 @@ void main(void)
 					s.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(s.Sensor, MASK0_4).Byte == 0x0f && cnt1 > 200)
+				else if (maskSensorInfo(s.Sensor, MASK0_4).Byte == RIGHT_LINE && cnt1 > 200)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -331,7 +330,7 @@ void main(void)
 				{
 					motor(10, 60);
 				}
-				if (cnt1 > 200 && s.Sensor.Byte != 0x00)
+				if (cnt1 > 200 && maskSensorInfo(s.Sensor, LEFT_SENSORS_2).Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
 					// of the sensors we wait 200 ms. After that we wait till one of the
@@ -362,7 +361,7 @@ void main(void)
 				{
 					motor(60, 10);
 				}
-				if (cnt1 > 200 && s.Sensor.Byte != 0x00)
+				if (cnt1 > 200 && maskSensorInfo(s.Sensor, RIGHT_SENSORS_2).Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
 					// of the sensors we wait 200 ms. After that we wait till one of the
@@ -433,9 +432,9 @@ void main(void)
 			{
 				handle(27);
 				setSpeed(27, 40);
-
 				led_out(0x3);
-				if (maskSensorInfo(s.Sensor, MASK2_4).Byte != 0x00)
+				
+				if (maskSensorInfo(s.Sensor, MASK4_2).Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
