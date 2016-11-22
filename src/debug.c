@@ -35,10 +35,10 @@ void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sens
 
 	if (prevMsg->Pattern != Pattern
 	 || prevMsg->Angle	!= Angle
-	 || prevMsg->SpeedLeft != SpeedLeft
-	 || prevMsg->SpeedRight != SpeedRight
-	 || prevMsg->Sensor != Sensor
-	 || prevMsg->SensorMask != SensorMask
+	 || prevMsg->MotorLeft != SpeedLeft
+	 || prevMsg->MotorRight != SpeedRight
+	 || prevMsg->Sensor.Byte != Sensor
+	 || prevMsg->TraceMask != SensorMask
 	 || prevMsg->MessageByte != MessageByte
 	 || prevMsg->MessageData != MessageData)
 	{
@@ -47,39 +47,25 @@ void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sens
 
 		nextMsg->Pattern	= Pattern;
 		nextMsg->Angle	= Angle;
-		nextMsg->SpeedLeft = SpeedLeft;
-		nextMsg->SpeedRight= SpeedRight;
-		nextMsg->Sensor = Sensor;
-		nextMsg->SensorMask = SensorMask;
+		nextMsg->MotorLeft = SpeedLeft;
+		nextMsg->MotorRight= SpeedRight;
+		nextMsg->Sensor.Byte = Sensor;
+		nextMsg->TraceMask = SensorMask;
 		nextMsg->MessageByte = MessageByte;
 		nextMsg->MessageData = MessageData;
 	}
 }
 
-void dbglog(Message msg)
+void dbglog(Message* newMsg)
 {
-	Message prevMsg = MsgBuffer[BufferPos];
+	Message* prevMsg = &MsgBuffer[BufferPos];
 
-	char equal =
-			   msg.Pattern	== prevMsg.Pattern
-			&& msg.Angle	== prevMsg.Angle
-			&& msg.SpeedLeft == prevMsg.SpeedLeft
-			&& msg.SpeedRight== prevMsg.SpeedRight
-			&& msg.Sensor == prevMsg.Sensor
-			&& msg.SensorMask == prevMsg.SensorMask
-			&& msg.MessageByte == prevMsg.MessageByte
-			&& msg.MessageData == prevMsg.MessageData;
-
-	if (!equal)
+	if (!memcmp(newMsg, prevMsg, sizeof(Message)))
 	{
-		BufferPos++;
-		if (BufferPos >= MsgBufferSize)
-		{
-			BufferPos = 0;
-		}
+		BufferPos = (BufferPos + 1) % MsgBufferSize;
+		Message* nextMsg = &MsgBuffer[BufferPos];
 
-		MsgBuffer[BufferPos] = msg;
-		//fwrite(&msg, sizeof(Message), 1, stdout);
+		memcpy(nextMsg, newMsg, sizeof(Message));
 	}
 }
 

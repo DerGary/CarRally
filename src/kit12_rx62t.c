@@ -90,12 +90,9 @@ unsigned long cnt0;
 unsigned long cnt1;
 unsigned long cnt2 = 1001;
 unsigned char nextPattern = 0;
-unsigned char pattern = WAIT_FOR_SWITCH;
-char motorLeft;
-char motorRight;
-char angle;
-SensorInfo sensor;
-unsigned char traceMask = NORMAL_MASK;
+
+// Holds the program state
+Message s = {0};
 
 int previousHandleAngle = 0;
 int trackPosition = 0;
@@ -117,12 +114,12 @@ int* breakTimeForSharpTurns = breakTimeForSharpTurnsCar1;
 
 void handle(int steeringAngle){
 	setServo(steeringAngle);
-	angle = steeringAngle;
+	s.Angle = steeringAngle;
 }
 void motor(int speedMotorLeft, int speedMotorRight){
-	setMotor(motorLeft, motorRight);
-	motorLeft = speedMotorLeft;
-	motorRight = speedMotorRight;
+	setMotor(s.MotorLeft, s.MotorRight);
+	s.MotorLeft = speedMotorLeft;
+	s.MotorRight = speedMotorRight;
 }
 
 void emergencyExit(void)
@@ -130,7 +127,7 @@ void emergencyExit(void)
 	if (!readSensor())
 	{
 		motor(0, 0);
-		pattern = WAIT_FOR_LOST_TRACK;
+		s.Pattern = WAIT_FOR_LOST_TRACK;
 	}
 }
 
@@ -148,24 +145,27 @@ void main(void)
 	/* Initialize micom car state */
 	handle(0);
 	motor(0, 0);
+	s.Pattern = WAIT_FOR_SWITCH;
+	s.TraceMask = NORMAL_MASK;
+	s.EndOfMessage = 0xFFFF;
 
 	//BREAK2();
 
 	while (1)
 	{
-		sensor = readSensorInfo();
-		if (pattern != WAIT_FOR_SWITCH && pushsw_get())
+		s.Sensor = readSensorInfo();
+		if (s.Pattern != WAIT_FOR_SWITCH && pushsw_get())
 		{
 			sendDebugBuffer();
 		}
-		switch (pattern)
+		switch (s.Pattern)
 		{
 			case WAIT_FOR_SWITCH:
 				/* Wait for switch input */
 				//PRINT_L("wait for switch");
 				if (pushsw_get())
 				{
-					pattern = WAIT_FOR_STARTBAR;
+					s.Pattern = WAIT_FOR_STARTBAR;
 					cnt1 = 0;
 					break;
 				}
@@ -189,7 +189,7 @@ void main(void)
 				{
 					/* Start!! */
 					led_out(0x0);
-					pattern = NORMAL_TRACE;
+					s.Pattern = NORMAL_TRACE;
 					cnt1 = 0;
 					break;
 				}
@@ -208,9 +208,9 @@ void main(void)
 				break;
 			case WAIT_FOR_LOST_TRACK:
 			{
-				if (sensor.Byte != 0x00)
+				if (s.Sensor.Byte != 0x00)
 				{
-					pattern = NORMAL_TRACE;
+					s.Pattern = NORMAL_TRACE;
 				}
 				PRINT("wait for lost track, sensor = %d", sensorResult);
 				break;
@@ -224,20 +224,20 @@ void main(void)
 					traceTrack();
 					break;
 				}
-				if (sensor.Byte == CROSS_LINE)
+				if (s.Sensor.Byte == CROSS_LINE)
 				{
-					pattern = CROSS_LINE;
+					s.Pattern = CROSS_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(sensor, MASK4_0).Byte == LEFT_LINE)
+				else if (maskSensorInfo(s.Sensor, MASK4_0).Byte == LEFT_LINE)
 				{
-					pattern = WAIT_HALF_LINE;
+					s.Pattern = WAIT_HALF_LINE;
 					nextPattern = LEFT_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(sensor, MASK0_4).Byte == RIGHT_LINE)
+				else if (maskSensorInfo(s.Sensor, MASK0_4).Byte == RIGHT_LINE)
 				{
-					pattern = WAIT_HALF_LINE;
+					s.Pattern = WAIT_HALF_LINE;
 					nextPattern = RIGHT_LINE;
 					cnt1 = 0;
 				}
@@ -258,13 +258,13 @@ void main(void)
 				// into the left line state.
 				timer(10);
 				led_out(0x2);
-				if (sensor.Byte == CROSS_LINE)
+				if (s.Sensor.Byte == CROSS_LINE)
 				{
-					pattern = CROSS_LINE;
+					s.Pattern = CROSS_LINE;
 				}
 				else
 				{
-					pattern = nextPattern;
+					s.Pattern = nextPattern;
 				}
 				cnt1 = 0;
 				DBG();
@@ -273,7 +273,7 @@ void main(void)
 			{
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
-				if (maskSensorInfo(sensor, MASK4_0).Byte == 0xf0 && cnt1 > 200)
+				if (maskSensorInfo(s.Sensor, MASK4_0).Byte == 0xf0 && cnt1 > 200)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -281,10 +281,10 @@ void main(void)
 					// the motor to steering.
 					handle(-46);
 					motor(10, 60);
-					pattern = SHARP_CORNER_LEFT;
+					s.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(sensor, MASK0_4).Byte == 0x0f && cnt1 > 200)
+				else if (maskSensorInfo(s.Sensor, MASK0_4).Byte == 0x0f && cnt1 > 200)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -292,7 +292,7 @@ void main(void)
 					// the motor to steering.
 					handle(46);
 					motor(60, 10);
-					pattern = SHARP_CORNER_RIGHT;
+					s.Pattern = SHARP_CORNER_RIGHT;
 					cnt1 = 0;
 				}
 				else
@@ -331,13 +331,13 @@ void main(void)
 				{
 					motor(10, 60);
 				}
-				if (cnt1 > 200 && sensor.Byte != 0x00)
+				if (cnt1 > 200 && s.Sensor.Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
 					// of the sensors we wait 200 ms. After that we wait till one of the
 					// 2 left most sensors detect a line then we change to the normal trace.
-					pattern = NORMAL_TRACE;
-					traceMask = LEFT_MASK;
+					s.Pattern = NORMAL_TRACE;
+					s.TraceMask = LEFT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
 				}
@@ -362,13 +362,13 @@ void main(void)
 				{
 					motor(60, 10);
 				}
-				if (cnt1 > 200 && sensor.Byte != 0x00)
+				if (cnt1 > 200 && s.Sensor.Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
 					// of the sensors we wait 200 ms. After that we wait till one of the
 					// 2 right most sensors detect a line then we change to the normal trace.
-					pattern = NORMAL_TRACE;
-					traceMask = RIGHT_MASK;
+					s.Pattern = NORMAL_TRACE;
+					s.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
 				}
@@ -382,10 +382,10 @@ void main(void)
 			}
 			case LEFT_LINE:
 				led_out(0x1);
-				if (sensor.Byte == 0x00)
+				if (s.Sensor.Byte == 0x00)
 				{
-					// after we lost the line we steer 25° in the direction where the line should be and go into pattern search line
-					pattern = SEARCH_LINE_LEFT;
+					// after we lost the line we steer 25° in the direction where the line should be and go into s.Pattern search line
+					s.Pattern = SEARCH_LINE_LEFT;
 				}
 				else
 				{
@@ -396,10 +396,10 @@ void main(void)
 				break;
 			case RIGHT_LINE:
 				led_out(0x1);
-				if (sensor.Byte == 0x00)
+				if (s.Sensor.Byte == 0x00)
 				{
-					// after we lost the line we go into pattern search line
-					pattern = SEARCH_LINE_RIGHT;
+					// after we lost the line we go into s.Pattern search line
+					s.Pattern = SEARCH_LINE_RIGHT;
 				}
 				else
 				{
@@ -414,7 +414,7 @@ void main(void)
 				setSpeed(-27, 40);
 
 				led_out(0x3);
-				if (maskSensorInfo(sensor, MASK2_4).Byte != 0x00)
+				if (maskSensorInfo(s.Sensor, MASK2_4).Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -422,8 +422,8 @@ void main(void)
 					// the outer most sensor. We also disabled the second most outer sensor to prevent the normal trace
 					// to enter the line switch state again if the outer most sensor would turn on because it gets another
 					// reading.
-					pattern = NORMAL_TRACE;
-					traceMask = RIGHT_MASK;
+					s.Pattern = NORMAL_TRACE;
+					s.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
 				}
 				DBG();
@@ -435,7 +435,7 @@ void main(void)
 				setSpeed(27, 40);
 
 				led_out(0x3);
-				if (maskSensorInfo(sensor, MASK2_4).Byte != 0x00)
+				if (maskSensorInfo(s.Sensor, MASK2_4).Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -443,8 +443,8 @@ void main(void)
 					// the outer most sensor. We also disabled the second most outer sensor to prevent the normal trace
 					// to enter the line switch state again if the outer most sensor would turn on because it gets another
 					// reading.
-					pattern = NORMAL_TRACE;
-					traceMask = LEFT_MASK;
+					s.Pattern = NORMAL_TRACE;
+					s.TraceMask = LEFT_MASK;
 					cnt2 = 0;
 				}
 				DBG();
@@ -453,7 +453,7 @@ void main(void)
 			default:
 				/* If neither, return to standby state */
 				motor(0, 0);
-				pattern = WAIT_FOR_SWITCH;
+				s.Pattern = WAIT_FOR_SWITCH;
 				break;
 		}
 	}
@@ -481,13 +481,13 @@ int setHandleAngleFromResult(SensorInfo sensorResult){
 
 void traceTrack()
 {
-	SensorInfo maskedSensorResult = maskSensorInfo(sensor, traceMask);
+	SensorInfo maskedSensorResult = maskSensorInfo(s.Sensor, s.TraceMask);
 	if (maskedSensorResult.Byte == 0x00)
 	{
 		if(cnt1 > 1000){
 			// after 1 second stop, you wont find the track again ;)
 			motor(0,0);
-			pattern = WAIT_FOR_LOST_TRACK;
+			s.Pattern = WAIT_FOR_LOST_TRACK;
 			return;
 		}
 		// lost track => steer more in the current direction until the track is found again
@@ -501,10 +501,10 @@ void traceTrack()
 		if (abs(handleAngle) > 45)
 			handleAngle = 45 * trackPosition;
 
-		if (traceMask == LEFT_MASK)
-			traceMask = MASK4_0;
-		else if (traceMask == RIGHT_MASK)
-			traceMask = MASK0_4;
+		if (s.TraceMask == LEFT_MASK)
+			s.TraceMask = MASK4_0;
+		else if (s.TraceMask == RIGHT_MASK)
+			s.TraceMask = MASK0_4;
 
 		handle(handleAngle);
 		setSpeed(handleAngle, 40);
@@ -517,16 +517,16 @@ void traceTrack()
 	// reset the mask.
 	if (abs(handleAngle) < 5)
 	{
-		traceMask = NORMAL_MASK;
+		s.TraceMask = NORMAL_MASK;
 	}
 	else if (handleAngle < 0)
 	{
-		traceMask = LEFT_MASK;
+		s.TraceMask = LEFT_MASK;
 		trackPosition = LEFT;
 	}
 	else if (handleAngle > 0)
 	{
-		traceMask = RIGHT_MASK;
+		s.TraceMask = RIGHT_MASK;
 		trackPosition = RIGHT;
 	}
 

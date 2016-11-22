@@ -14,15 +14,16 @@
 #include <stdio.h>
 #include <machine.h>
 #include "printf_lib.h"
+#include "SensorInfo.h"
 
 typedef struct
 {
 	unsigned char Pattern;
 	         char Angle;
-	         char SpeedLeft;
-	         char SpeedRight;
-	unsigned char Sensor;
-	unsigned char SensorMask;
+	         char MotorLeft;
+	         char MotorRight;
+	   SensorInfo Sensor;
+	unsigned char TraceMask;
 	unsigned char MessageByte;
 	unsigned char MessageData;
 		    short EndOfMessage;
@@ -31,11 +32,10 @@ typedef struct
 void debug_init();
 void _debugBreak(int pc);
 
-#define DBG_MSG(_msg_, _data_) dbgMsg(pattern, angle, motorLeft, motorRight, sensor.Byte, traceMask, _msg_, _data_)
-#define DBG() DBG_MSG(0, 0)
+#define DBG() dbglog(&s)
 
 void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
-void dbglog(Message msg);
+void dbglog(Message* newMsg);
 void sendDebugBuffer();
 
 
