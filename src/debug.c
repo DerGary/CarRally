@@ -23,7 +23,7 @@ void debug_init()
 	setbuf(stdout, NULL);
 #endif
 
-	memset(&MsgBuffer, 0, sizeof(Message)*MsgBufferSize);
+	memset(&MsgBuffer, 0, sizeof(MsgBuffer));
 
 	init_sci1_printf( SPEED_9600 );
 	setpsw_i();
@@ -31,18 +31,29 @@ void debug_init()
 
 void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData)
 {
-	Message msg;
+	Message* prevMsg = &MsgBuffer[BufferPos];
 
-	msg.Pattern	= Pattern;
-	msg.Angle	= Angle;
-	msg.SpeedLeft = SpeedLeft;
-	msg.SpeedRight= SpeedRight;
-	msg.Sensor = Sensor;
-	msg.SensorMask = SensorMask;
-	msg.MessageByte = MessageByte;
-	msg.MessageData = MessageData;
+	if (prevMsg->Pattern != Pattern
+	 || prevMsg->Angle	!= Angle
+	 || prevMsg->SpeedLeft != SpeedLeft
+	 || prevMsg->SpeedRight != SpeedRight
+	 || prevMsg->Sensor != Sensor
+	 || prevMsg->SensorMask != SensorMask
+	 || prevMsg->MessageByte != MessageByte
+	 || prevMsg->MessageData != MessageData)
+	{
+		BufferPos = (BufferPos + 1) % MsgBufferSize;
+		Message* nextMsg = &MsgBuffer[BufferPos];
 
-	dbglog(msg);
+		nextMsg->Pattern	= Pattern;
+		nextMsg->Angle	= Angle;
+		nextMsg->SpeedLeft = SpeedLeft;
+		nextMsg->SpeedRight= SpeedRight;
+		nextMsg->Sensor = Sensor;
+		nextMsg->SensorMask = SensorMask;
+		nextMsg->MessageByte = MessageByte;
+		nextMsg->MessageData = MessageData;
+	}
 }
 
 void dbglog(Message msg)
