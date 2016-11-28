@@ -16,6 +16,8 @@
 #include "printf_lib.h"
 #include "SensorInfo.h"
 
+typedef unsigned long time_t;
+
 typedef struct
 {
 	unsigned char Pattern;
@@ -26,18 +28,15 @@ typedef struct
 	unsigned char TraceMask;
 	unsigned char MessageByte;
 	unsigned char MessageData;
-		    short EndOfMessage;
+		   time_t SysTime; // always the last element
 } Message;
 
 void debug_init();
 void _debugBreak(int pc);
 
 
-
-//void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData);
 void dbglog(Message* newMsg);
 void sendDebugBuffer();
-
 
 #if ENABLE_DEBUG
 // Prints a string like printf

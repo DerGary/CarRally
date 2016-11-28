@@ -147,7 +147,6 @@ void main(void)
 	motor(0, 0);
 	state.Pattern = WAIT_FOR_SWITCH;
 	state.TraceMask = NORMAL_MASK;
-	state.EndOfMessage = 0xFFFF;
 
 	//BREAK2();
 
@@ -622,6 +621,7 @@ void Excep_CMT0_CMI0(void)
 	cnt0++;
 	cnt1++;
 	cnt2++;
+	state.SysTime++;
 }
 
 /***********************************************************************/

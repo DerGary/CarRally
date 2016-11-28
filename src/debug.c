@@ -8,7 +8,7 @@
 #include "debug.h"
 #include <string.h>
 
-#define MsgBufferSize 900
+#define MsgBufferSize 700
 static size_t BufferPos = 0;
 static Message MsgBuffer[MsgBufferSize];
 
@@ -29,38 +29,11 @@ void debug_init()
 	setpsw_i();
 }
 
-void dbgMsg(char Pattern, char Angle, char SpeedLeft, char SpeedRight, char Sensor, char SensorMask, char MessageByte, char MessageData)
-{
-	Message* prevMsg = &MsgBuffer[BufferPos];
-
-	if (prevMsg->Pattern != Pattern
-	 || prevMsg->Angle	!= Angle
-	 || prevMsg->MotorLeft != SpeedLeft
-	 || prevMsg->MotorRight != SpeedRight
-	 || prevMsg->Sensor.Byte != Sensor
-	 || prevMsg->TraceMask != SensorMask
-	 || prevMsg->MessageByte != MessageByte
-	 || prevMsg->MessageData != MessageData)
-	{
-		BufferPos = (BufferPos + 1) % MsgBufferSize;
-		Message* nextMsg = &MsgBuffer[BufferPos];
-
-		nextMsg->Pattern	= Pattern;
-		nextMsg->Angle	= Angle;
-		nextMsg->MotorLeft = SpeedLeft;
-		nextMsg->MotorRight= SpeedRight;
-		nextMsg->Sensor.Byte = Sensor;
-		nextMsg->TraceMask = SensorMask;
-		nextMsg->MessageByte = MessageByte;
-		nextMsg->MessageData = MessageData;
-	}
-}
-
 void dbglog(Message* newMsg)
 {
 	Message* prevMsg = &MsgBuffer[BufferPos];
 
-	if (memcmp(newMsg, prevMsg, sizeof(Message)))
+	if (memcmp(newMsg, prevMsg, sizeof(Message)-sizeof(time_t)))
 	{
 		BufferPos = (BufferPos + 1) % MsgBufferSize;
 		Message* nextMsg = &MsgBuffer[BufferPos];
