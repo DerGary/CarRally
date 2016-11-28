@@ -13,6 +13,29 @@
  * Motor drive board Ver. 5
  */
 
+#define CAR 1
+#define SERVO_CENTER_CAR_1 2284
+#define SERVO_CENTER_CAR_2 2291
+#define SERVO_CENTER_CAR_3 2321
+#define SERVO_CENTER_CAR_4 2370
+#if CAR == 1
+	#define SERVO_CENTER    SERVO_CENTER_CAR_1          /* Servo center value          */
+	#define DRIVETIMES driveTimeForSharpTurnsCar1
+	#define BREAKTIMES breakTimeForSharpTurnsCar1
+#elif CAR == 2
+	#define SERVO_CENTER    SERVO_CENTER_CAR_2          /* Servo center value          */
+	#define DRIVETIMES driveTimeForSharpTurnsCar2
+	#define BREAKTIMES breakTimeForSharpTurnsCar2
+#elif CAR == 3
+	#define SERVO_CENTER    SERVO_CENTER_CAR_3          /* Servo center value          */
+	#define DRIVETIMES driveTimeForSharpTurnsCar3
+	#define BREAKTIMES breakTimeForSharpTurnsCar3
+#elif CAR == 4
+	#define SERVO_CENTER    SERVO_CENTER_CAR_4          /* Servo center value          */
+	#define DRIVETIMES driveTimeForSharpTurnsCar4
+	#define BREAKTIMES breakTimeForSharpTurnsCar4
+#endif
+
 /*======================================*/
 /* Include                              */
 /*======================================*/
@@ -102,6 +125,15 @@ int sharpTurnCounter = 0;
 #define TOTAL_SHARP_TURNS 4
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 
+#define WAIT_HALF_LINE_TIMER 10
+#define WAIT_FOR_LANE_CHANGE_SPEED 60
+#define SHARP_CORNER_HANDLE_ANGLE 46
+#define SHARP_CORNER_SPEED_FAST 60
+#define SHARP_CORNER_SPEED_SLOW 10
+#define LANE_SWITCH_HANDLE_ANGLE 27
+#define LANE_SWITCH_SPEED 40
+
+
 int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 350, 100 };
 int breakTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 650, 	200, 200, 300 };
 int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 500, 100 };
@@ -109,8 +141,8 @@ int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
 int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
 
-int* driveTimeForSharpTurns = driveTimeForSharpTurnsCar3;
-int* breakTimeForSharpTurns = breakTimeForSharpTurnsCar3;
+int* driveTimeForSharpTurns = DRIVETIMES;
+int* breakTimeForSharpTurns = BREAKTIMES;
 
 void handle(int steeringAngle){
 	setServo(steeringAngle);
@@ -255,7 +287,7 @@ void main(void)
 				// new reading is now a cross line than the previous reading was false and we
 				// go into the cross line state otherwise it really was a left line and we go
 				// into the left line state.
-				timer(10);
+				timer(WAIT_HALF_LINE_TIMER);
 				state.Sensor = readSensorInfo();
 				led_out(0x2);
 				if (state.Sensor.Byte == CROSS_LINE)
@@ -279,8 +311,8 @@ void main(void)
 					// the left ones detect the line it means it is a left turn. So we set
 					// the handle angle to the highest that the car can handle and also set
 					// the motor to steering.
-					handle(-46);
-					motor(10, 60);
+					handle(-SHARP_CORNER_HANDLE_ANGLE);
+					motor(SHARP_CORNER_SPEED_SLOW, SHARP_CORNER_SPEED_FAST);
 					state.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
@@ -290,8 +322,8 @@ void main(void)
 					// the right ones detect the line it means it is a right turn. So we set
 					// the handle angle to the highest that the car can handle and also set
 					// the motor to steering.
-					handle(46);
-					motor(60, 10);
+					handle(SHARP_CORNER_HANDLE_ANGLE);
+					motor(SHARP_CORNER_SPEED_FAST, SHARP_CORNER_SPEED_SLOW);
 					state.Pattern = SHARP_CORNER_RIGHT;
 					cnt1 = 0;
 				}
@@ -312,7 +344,7 @@ void main(void)
 					}
 					else
 					{
-						setSpeedAndHandleAngle(60);
+						setSpeedAndHandleAngle(SHARP_CORNER_SPEED_FAST);
 					}
 					emergencyExit();
 				}
@@ -320,16 +352,16 @@ void main(void)
 				break;
 			}
 			case SHARP_CORNER_LEFT:{
-				handle(-46);
+				handle(-SHARP_CORNER_HANDLE_ANGLE);
 				if (cnt1 < 100)
 				{
 					// I tried to steer even harder by reversing the one motor for 100 ms,
 					// I don't know if that is really working.
-					motor(-100, 60);
+					motor(-100, SHARP_CORNER_SPEED_FAST);
 				}
 				else
 				{
-					motor(10, 60);
+					motor(SHARP_CORNER_SPEED_SLOW, SHARP_CORNER_SPEED_FAST);
 				}
 				if (cnt1 > 200 && maskSensorInfo(state.Sensor, LEFT_SENSORS_2).Byte != 0x00)
 				{
@@ -351,16 +383,16 @@ void main(void)
 			}
 			case SHARP_CORNER_RIGHT:
 			{
-				handle(46);
+				handle(SHARP_CORNER_HANDLE_ANGLE);
 				if (cnt1 < 100)
 				{
 					// I tried to steer even harder by reversing the one motor for 100 ms,
 					// I don't know if that is really working.
-					motor(60, -100);
+					motor(SHARP_CORNER_SPEED_FAST, -100);
 				}
 				else
 				{
-					motor(60, 10);
+					motor(SHARP_CORNER_SPEED_FAST, SHARP_CORNER_SPEED_SLOW);
 				}
 				if (cnt1 > 200 && maskSensorInfo(state.Sensor, RIGHT_SENSORS_2).Byte != 0x00)
 				{
@@ -390,7 +422,7 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(60);
+					setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
 				}
 				DBG();
 				break;
@@ -404,14 +436,14 @@ void main(void)
 				else
 				{
 					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(60);
+					setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
 				}
 				DBG();
 				break;
 			case SEARCH_LINE_LEFT:
 			{
-				handle(-27);
-				setSpeed(-27, 40);
+				handle(-LANE_SWITCH_HANDLE_ANGLE);
+				setSpeed(-LANE_SWITCH_HANDLE_ANGLE, LANE_SWITCH_SPEED);
 
 				led_out(0x3);
 				if (maskSensorInfo(state.Sensor, MASK2_4).Byte != 0x00)
@@ -431,8 +463,8 @@ void main(void)
 			}
 			case SEARCH_LINE_RIGHT:
 			{
-				handle(27);
-				setSpeed(27, 40);
+				handle(LANE_SWITCH_HANDLE_ANGLE);
+				setSpeed(LANE_SWITCH_HANDLE_ANGLE, LANE_SWITCH_SPEED);
 				led_out(0x3);
 				
 				if (maskSensorInfo(state.Sensor, MASK4_2).Byte != 0x00)
