@@ -154,10 +154,7 @@ void main(void)
 	while (1)
 	{
 		state.Sensor = readSensorInfo();
-		if (state.Pattern != WAIT_FOR_SWITCH && pushsw_get())
-		{
-			sendDebugBuffer();
-		}
+
 		switch (state.Pattern)
 		{
 			case WAIT_FOR_SWITCH:
@@ -211,6 +208,10 @@ void main(void)
 				if (state.Sensor.Byte != 0x00)
 				{
 					state.Pattern = NORMAL_TRACE;
+				}
+				if (state.Pattern != WAIT_FOR_SWITCH && pushsw_get())
+				{
+					sendDebugBuffer();
 				}
 				break;
 			}
