@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,51 +20,120 @@ namespace CarSerialInterpreterConsole
         public byte MessageData;
         public short EndOfMessage;
     }
+
     class Program
     {
+        const string comPort = "COM9";
+
+        const int Baud9600 = 9600;
+        const int Baud38400 = 38400;
+
+        static SerialPort port;
+
         static void Main(string[] args)
         {
-            System.IO.Ports.SerialPort port = new System.IO.Ports.SerialPort("COM9", 9600, System.IO.Ports.Parity.None, 8, System.IO.Ports.StopBits.One);
-            port.Open();
+            int MessageSize = System.Runtime.InteropServices.Marshal.SizeOf<Message>();
 
-            bool byte1Received = false;
-            bool byte2Received = false;
-            while (true)
+            port = new SerialPort(comPort, Baud9600, Parity.None, 8, StopBits.One);
+            port.ReadBufferSize = 16384;
+
+            Console.WriteLine($"Connecting on {comPort}...");
+            port.Open();
+            Console.WriteLine("Connected. Wait for data...");
+            
+            int messageCounter = 0;
+
+            try
             {
-                if (!byte2Received)
+                // wait for data
+                while (port.BytesToRead <= 10)
                 {
-                    while (port.BytesToRead > 1)
+                    Thread.Sleep(100);
+                }
+
+                // read while we receive data
+                while (true)
+                {
+                    // read messages
+                    while (port.BytesToRead >= MessageSize)
                     {
-                        byte readByte = (byte)port.ReadByte();
-                        if (byte1Received && readByte== 0xff)
+                        byte[] buffer = new byte[MessageSize];
+                        port.Read(buffer, 0, MessageSize);
+                        Message m = BufferToMessage(buffer);
+
+                        PrintPrettyMessage(m);
+
+                        messageCounter++;
+                    }
+
+                    // wait if new data is incoming
+                    int sheepCounter = 100;
+
+                    // sleep a short time and check if new data is received
+                    while (sheepCounter > 0)
+                    {
+                        sheepCounter--;
+                        Thread.Sleep(10);
+
+                        if (port.BytesToRead > 0)
                         {
-                            byte2Received = true;
+                            // break sleep loop
                             break;
                         }
-                        else if (byte1Received)
-                        {
-                            byte1Received = false;
-                        }
-                        else if(readByte == 0xff)
-                        {
-                            byte1Received = true;
-                        }
                     }
-                }
-                else
-                {
-                    while (port.BytesToRead > 10)
+
+                    // if no new data, exit receive loop
+                    if (port.BytesToRead == 0)
                     {
-                        byte[] buffer = new byte[10];
-                        port.Read(buffer, 0, 10);
-                        Message m = BufferToMessage(buffer);
-                        string value = string.Join(" ", buffer.Select(x => (int)x));
-                        Console.WriteLine(value);
+                        break;
                     }
                 }
-                Thread.Sleep(100);
             }
-            
+            finally
+            {
+                port.Close();
+            }
+
+
+            Console.WriteLine($"Received {messageCounter} messages.");
+            Console.WriteLine("Done");
+            Console.ReadLine();
+        }
+
+        private static void PrintPrettyMessage(Message m)
+        {
+            if (m.EndOfMessage != 0)
+            {
+                Console.WriteLine("{0,22} {1,4}°   [{2,4}% {3,4}%]   {4} {5}",
+                    PatternName(m.Pattern),
+                    m.Angle,
+                    m.MotorLeft,
+                    m.MotorRight,
+                    Convert.ToString(m.Sensor, 2).PadLeft(8, '0').Replace('0', '.').Replace('1', 'X'),
+                    Convert.ToString(m.TraceMask, 2).PadLeft(8, '0').Replace('0', '_').Replace('1', 'X')
+                    );
+            }
+        }
+
+        private static string PatternName(byte pattern)
+        {
+            switch (pattern)
+            {
+                case 0: return "WAIT_FOR_SWITCH";
+                case 1: return "WAIT_FOR_STARTBAR";
+                case 2: return "WAIT_FOR_LOST_TRACK";
+                case 3: return "NORMAL_TRACE";
+                case 4: return "DETECT_SHARP_CORNER";
+                case 5: return "SHARP_CORNER_LEFT";
+                case 6: return "SHARP_CORNER_RIGHT";
+                case 8: return "WAIT_HALF_LINE";
+                case 10: return "SEARCH_LINE_RIGHT";
+                case 11: return "SEARCH_LINE_LEFT";
+                case 0x0f: return "RIGHT_LINE";
+                case 0xf0: return "LEFT_LINE";
+                case 0xff: return "CROSS_LINE";
+                default: return "0x" + pattern.ToString("X");
+            }
         }
 
         static Message BufferToMessage(byte[] buffer)
@@ -78,7 +148,7 @@ namespace CarSerialInterpreterConsole
                 TraceMask = buffer[5],
                 MessageByte = buffer[6],
                 MessageData = buffer[7],
-                EndOfMessage = (short)((buffer[8] << 8) & buffer[9])
+                EndOfMessage = (short)((buffer[8] << 8) | buffer[9])
             };
             return m;
         }
