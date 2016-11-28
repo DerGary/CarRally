@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
@@ -41,7 +42,7 @@ namespace CarSerialInterpreterConsole
             port.Open();
             Console.WriteLine("Connected. Wait for data...");
             
-            int messageCounter = 0;
+            List<Message> messages = new List<Message>();
 
             try
             {
@@ -50,6 +51,8 @@ namespace CarSerialInterpreterConsole
                 {
                     Thread.Sleep(100);
                 }
+
+                Console.WriteLine("Receiving data...");
 
                 // read while we receive data
                 while (true)
@@ -61,9 +64,8 @@ namespace CarSerialInterpreterConsole
                         port.Read(buffer, 0, MessageSize);
                         Message m = BufferToMessage(buffer);
 
+                        messages.Add(m);
                         PrintPrettyMessage(m);
-
-                        messageCounter++;
                     }
 
                     // wait if new data is incoming
@@ -94,8 +96,17 @@ namespace CarSerialInterpreterConsole
                 port.Close();
             }
 
+            using (var sw = new StreamWriter(File.OpenWrite(string.Format("run-{0:yyyyMMdd-HHmmss}.csv", DateTime.Now))))
+            {
+                sw.WriteLine("Pattern;Angle;MotorLeft;MotorRight;Sensor;TraceMask");
+                foreach (Message m in messages)
+                {
+                    sw.WriteLine("0x{0:X2};{1};{2};{3};0x{4:X2};0x{5:X2}",
+                        m.Pattern, m.Angle, m.MotorLeft, m.MotorRight, m.Sensor, m.TraceMask);
+                }
+            }
 
-            Console.WriteLine($"Received {messageCounter} messages.");
+            Console.WriteLine($"Received {messages.Count} messages.");
             Console.WriteLine("Done");
             Console.ReadLine();
         }
@@ -109,10 +120,18 @@ namespace CarSerialInterpreterConsole
                     m.Angle,
                     m.MotorLeft,
                     m.MotorRight,
-                    Convert.ToString(m.Sensor, 2).PadLeft(8, '0').Replace('0', '.').Replace('1', 'X'),
-                    Convert.ToString(m.TraceMask, 2).PadLeft(8, '0').Replace('0', '_').Replace('1', 'X')
+                    BitPattern(m.Sensor, '.', 'X'),
+                    BitPattern(m.TraceMask, '_', 'X')
                     );
             }
+        }
+
+        private static string BitPattern(byte v, char zeroChar, char oneChar)
+        {
+            return Convert.ToString(v, 2)
+                          .PadLeft(8, '0')
+                          .Replace('0', zeroChar)
+                          .Replace('1', oneChar);
         }
 
         private static string PatternName(byte pattern)
