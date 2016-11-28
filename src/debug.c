@@ -8,7 +8,7 @@
 #include "debug.h"
 #include <string.h>
 
-#define MsgBufferSize 100
+#define MsgBufferSize 900
 static size_t BufferPos = 0;
 static Message MsgBuffer[MsgBufferSize];
 
@@ -60,7 +60,7 @@ void dbglog(Message* newMsg)
 {
 	Message* prevMsg = &MsgBuffer[BufferPos];
 
-	if (!memcmp(newMsg, prevMsg, sizeof(Message)))
+	if (memcmp(newMsg, prevMsg, sizeof(Message)))
 	{
 		BufferPos = (BufferPos + 1) % MsgBufferSize;
 		Message* nextMsg = &MsgBuffer[BufferPos];
@@ -71,7 +71,12 @@ void dbglog(Message* newMsg)
 
 void sendDebugBuffer()
 {
-	fwrite(&MsgBuffer, sizeof(Message), MsgBufferSize, stdout);
+	size_t currentMsg = BufferPos;
+	size_t lastMsg = (currentMsg+1) % MsgBufferSize;
+	fwrite(&MsgBuffer + lastMsg*sizeof(Message), sizeof(Message), MsgBufferSize- lastMsg, stdout);
+	fwrite(&MsgBuffer, sizeof(Message), currentMsg+1, stdout);
+
+	fflush(stdout);
 }
 
 void _debugBreak(int pc)
