@@ -19,11 +19,15 @@ namespace CarSerialInterpreterConsole
         public byte MessageData;
         public short EndOfMessage;
     }
+
     class Program
     {
         static void Main(string[] args)
         {
-            System.IO.Ports.SerialPort port = new System.IO.Ports.SerialPort("COM9", 9600, System.IO.Ports.Parity.None, 8, System.IO.Ports.StopBits.One);
+            const string comPort = "COM9";
+
+            Console.WriteLine($"Connecting on {comPort}...");
+            System.IO.Ports.SerialPort port = new System.IO.Ports.SerialPort(comPort, 9600, System.IO.Ports.Parity.None, 8, System.IO.Ports.StopBits.One);
             port.Open();
 
             bool byte1Received = false;
@@ -57,13 +61,48 @@ namespace CarSerialInterpreterConsole
                         byte[] buffer = new byte[10];
                         port.Read(buffer, 0, 10);
                         Message m = BufferToMessage(buffer);
-                        string value = string.Join(" ", buffer.Select(x => (int)x));
-                        Console.WriteLine(value);
+
+                        PrintPrettyMessage(m);
                     }
                 }
                 Thread.Sleep(100);
             }
-            
+        }
+
+        private static void PrintPrettyMessage(Message m)
+        {
+            if (m.EndOfMessage != 0)
+            {
+                Console.WriteLine("{0,22} {1,4}°   [{2,4}% {3,4}%]   {4} {5}",
+                    PatternName(m.Pattern),
+                    m.Angle,
+                    m.MotorLeft,
+                    m.MotorRight,
+                    Convert.ToString(m.Sensor, 2).PadLeft(8, '0').Replace('0', '.').Replace('1', 'X'),
+                    Convert.ToString(m.TraceMask, 2).PadLeft(8, '0').Replace('0', '_').Replace('1', 'X')
+                    );
+            }
+        }
+
+        private static string PatternName(byte pattern)
+        {
+            switch (pattern)
+            {
+                case 0: return "WAIT_FOR_SWITCH";
+                case 1: return "WAIT_FOR_STARTBAR";
+                case 2: return "WAIT_FOR_LOST_TRACK";
+                case 3: return "NORMAL_TRACE";
+                case 4: return "DETECT_SHARP_CORNER";
+                case 5: return "SHARP_CORNER_LEFT";
+                case 6: return "SHARP_CORNER_RIGHT";
+                case 8: return "WAIT_HALF_LINE";
+                case 10: return "SEARCH_LINE_RIGHT";
+                case 11: return "SEARCH_LINE_LEFT";
+                case 0x0f: return "RIGHT_LINE";
+                case 0xf0: return "LEFT_LINE";
+                case 0xff: return "CROSS_LINE";
+                default: return pattern.ToString("X");
+            }
         }
 
         static Message BufferToMessage(byte[] buffer)
@@ -78,7 +117,7 @@ namespace CarSerialInterpreterConsole
                 TraceMask = buffer[5],
                 MessageByte = buffer[6],
                 MessageData = buffer[7],
-                EndOfMessage = (short)((buffer[8] << 8) & buffer[9])
+                EndOfMessage = (short)((buffer[8] << 8) | buffer[9])
             };
             return m;
         }
