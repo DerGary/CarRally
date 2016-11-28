@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.Ports;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -22,51 +23,81 @@ namespace CarSerialInterpreterConsole
 
     class Program
     {
+        const string comPort = "COM9";
+
+        const int Baud9600 = 9600;
+        const int Baud38400 = 38400;
+
+        static SerialPort port;
+
         static void Main(string[] args)
         {
-            const string comPort = "COM9";
+            int MessageSize = System.Runtime.InteropServices.Marshal.SizeOf<Message>();
+
+            port = new SerialPort(comPort, Baud9600, Parity.None, 8, StopBits.One);
+            port.ReadBufferSize = 16384;
 
             Console.WriteLine($"Connecting on {comPort}...");
-            System.IO.Ports.SerialPort port = new System.IO.Ports.SerialPort(comPort, 9600, System.IO.Ports.Parity.None, 8, System.IO.Ports.StopBits.One);
             port.Open();
+            Console.WriteLine("Connected. Wait for data...");
+            
+            int messageCounter = 0;
 
-            bool byte1Received = false;
-            bool byte2Received = false;
-            while (true)
+            try
             {
-                if (!byte2Received)
+                // wait for data
+                while (port.BytesToRead <= 10)
                 {
-                    while (port.BytesToRead > 1)
-                    {
-                        byte readByte = (byte)port.ReadByte();
-                        if (byte1Received && readByte== 0xff)
-                        {
-                            byte2Received = true;
-                            break;
-                        }
-                        else if (byte1Received)
-                        {
-                            byte1Received = false;
-                        }
-                        else if(readByte == 0xff)
-                        {
-                            byte1Received = true;
-                        }
-                    }
+                    Thread.Sleep(100);
                 }
-                else
+
+                // read while we receive data
+                while (true)
                 {
-                    while (port.BytesToRead > 10)
+                    // read messages
+                    while (port.BytesToRead >= MessageSize)
                     {
-                        byte[] buffer = new byte[10];
-                        port.Read(buffer, 0, 10);
+                        byte[] buffer = new byte[MessageSize];
+                        port.Read(buffer, 0, MessageSize);
                         Message m = BufferToMessage(buffer);
 
                         PrintPrettyMessage(m);
+
+                        messageCounter++;
+                    }
+
+                    // wait if new data is incoming
+                    int sheepCounter = 100;
+
+                    // sleep a short time and check if new data is received
+                    while (sheepCounter > 0)
+                    {
+                        sheepCounter--;
+                        Thread.Sleep(10);
+
+                        if (port.BytesToRead > 0)
+                        {
+                            // break sleep loop
+                            break;
+                        }
+                    }
+
+                    // if no new data, exit receive loop
+                    if (port.BytesToRead == 0)
+                    {
+                        break;
                     }
                 }
-                Thread.Sleep(100);
             }
+            finally
+            {
+                port.Close();
+            }
+
+
+            Console.WriteLine($"Received {messageCounter} messages.");
+            Console.WriteLine("Done");
+            Console.ReadLine();
         }
 
         private static void PrintPrettyMessage(Message m)
@@ -101,7 +132,7 @@ namespace CarSerialInterpreterConsole
                 case 0x0f: return "RIGHT_LINE";
                 case 0xf0: return "LEFT_LINE";
                 case 0xff: return "CROSS_LINE";
-                default: return pattern.ToString("X");
+                default: return "0x" + pattern.ToString("X");
             }
         }
 
