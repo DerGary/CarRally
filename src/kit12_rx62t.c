@@ -34,6 +34,8 @@
 	#define SERVO_CENTER    SERVO_CENTER_CAR_4          /* Servo center value          */
 	#define DRIVETIMES driveTimeForSharpTurnsCar4
 	#define BREAKTIMES breakTimeForSharpTurnsCar4
+#else
+	#error Unknown CAR
 #endif
 
 /*======================================*/
