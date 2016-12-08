@@ -299,14 +299,12 @@ void main(void)
 				// new reading is now a cross line than the previous reading was false and we
 				// go into the cross line state otherwise it really was a left line and we go
 				// into the left line state.
-				timer(WAIT_HALF_LINE_TIMER);
-				state.Sensor = readSensorInfo();
 				led_out(0x2);
 				if (state.Sensor.Byte == CROSS_LINE)
 				{
 					state.Pattern = CROSS_LINE;
 				}
-				else
+				else if(cnt1 > 10)
 				{
 					state.Pattern = nextPattern;
 				}
