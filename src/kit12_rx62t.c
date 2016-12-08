@@ -13,8 +13,8 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 1
-#define SERVO_CENTER_CAR_1 2284
+#define CAR 4
+#define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
 #define SERVO_CENTER_CAR_4 2370
@@ -22,18 +22,26 @@
 	#define SERVO_CENTER    SERVO_CENTER_CAR_1          /* Servo center value          */
 	#define DRIVETIMES driveTimeForSharpTurnsCar1
 	#define BREAKTIMES breakTimeForSharpTurnsCar1
+	#define HANDLE_FACTOR -1
+	#define SPEED_FACTOR 1
 #elif CAR == 2
 	#define SERVO_CENTER    SERVO_CENTER_CAR_2          /* Servo center value          */
 	#define DRIVETIMES driveTimeForSharpTurnsCar2
 	#define BREAKTIMES breakTimeForSharpTurnsCar2
+	#define HANDLE_FACTOR 1
+	#define SPEED_FACTOR 1
 #elif CAR == 3
 	#define SERVO_CENTER    SERVO_CENTER_CAR_3          /* Servo center value          */
 	#define DRIVETIMES driveTimeForSharpTurnsCar3
 	#define BREAKTIMES breakTimeForSharpTurnsCar3
+	#define HANDLE_FACTOR 1
+	#define SPEED_FACTOR 1
 #elif CAR == 4
 	#define SERVO_CENTER    SERVO_CENTER_CAR_4          /* Servo center value          */
 	#define DRIVETIMES driveTimeForSharpTurnsCar4
 	#define BREAKTIMES breakTimeForSharpTurnsCar4
+	#define HANDLE_FACTOR 1
+	#define SPEED_FACTOR 0.7
 #else
 	#error Unknown CAR
 #endif
@@ -142,16 +150,18 @@ int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
 int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
+int driveTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 0, 	0, 350, 50 };
+int breakTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 800, 	400, 200, 400 };
 
 int* driveTimeForSharpTurns = DRIVETIMES;
 int* breakTimeForSharpTurns = BREAKTIMES;
 
 void handle(int steeringAngle){
-	setServo(steeringAngle);
+	setServo(steeringAngle*HANDLE_FACTOR);
 	state.Angle = steeringAngle;
 }
 void motor(int speedMotorLeft, int speedMotorRight){
-	setMotor(speedMotorLeft, speedMotorRight);
+	setMotor(speedMotorLeft*SPEED_FACTOR, speedMotorRight*SPEED_FACTOR);
 	state.MotorLeft = speedMotorLeft;
 	state.MotorRight = speedMotorRight;
 }
@@ -242,7 +252,7 @@ void main(void)
 				{
 					state.Pattern = NORMAL_TRACE;
 				}
-				if (state.Pattern != WAIT_FOR_SWITCH && pushsw_get())
+				if (pushsw_get())
 				{
 					sendDebugBuffer();
 				}
@@ -307,7 +317,7 @@ void main(void)
 			{
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
-				if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE && cnt1 > 200)
+				if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE && cnt1 > 100)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -318,7 +328,7 @@ void main(void)
 					state.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK0_4).Byte == RIGHT_LINE && cnt1 > 200)
+				else if (maskSensorInfo(state.Sensor, MASK0_4).Byte == RIGHT_LINE && cnt1 > 100)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -365,6 +375,7 @@ void main(void)
 				{
 					motor(SHARP_CORNER_SPEED_SLOW, SHARP_CORNER_SPEED_FAST);
 				}
+				//Todo try without cnt1 > 200
 				if (cnt1 > 200 && maskSensorInfo(state.Sensor, LEFT_SENSORS_2).Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
