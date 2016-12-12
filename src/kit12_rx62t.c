@@ -62,7 +62,7 @@
 /*======================================*/
 
 /* Masked value settings X:masked (disabled) O:not masked (enabled) */
-#define MASK2_2         0x66            /* X O O X  X O O X            */
+#define MASK2_2         0x3C            /* X X O 0  0 O X X            */
 #define MASK2_0         0x60            /* X O O X  X X X X            */
 #define MASK0_2         0x06            /* X X X X  X O O X            */
 #define MASK3_3         0xe7            /* O O O X  X O O O            */
@@ -80,8 +80,8 @@
 #define LEFT_SENSORS_2  0xc0            /* 0 0 X X  X X X X            */
 #define RIGHT_SENSORS_2 0x03            /* X X X X  X X 0 0            */
 
-#define LEFT_MASK MASK4_2
-#define RIGHT_MASK MASK2_4
+#define LEFT_MASK MASK4_1
+#define RIGHT_MASK MASK1_4
 #define NORMAL_MASK MASK4_4
 
 #define RIGHT_LINE 	0x0f //O O O 0  X X X X
@@ -121,7 +121,8 @@ void handle(int angle);
 /*======================================*/
 unsigned long cnt0;
 unsigned long cnt1;
-unsigned long cnt2 = 1001;
+unsigned long cnt2;
+unsigned long cnt3;
 unsigned char nextPattern = 0;
 
 // Holds the program state
@@ -132,16 +133,20 @@ int trackPosition = 0;
 
 /* 90° Turn Counter */
 int sharpTurnCounter = 0;
+int obstacleCounter = 0;
+#define TOTAL_OBSTACLES 7
 #define TOTAL_SHARP_TURNS 4
 #define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
+#define CURRENT_OBSTACLE (obstacleCounter % TOTAL_OBSTACLES)
 
 #define WAIT_HALF_LINE_TIMER 10
 #define WAIT_FOR_LANE_CHANGE_SPEED 60
 #define SHARP_CORNER_HANDLE_ANGLE 46
 #define SHARP_CORNER_SPEED_FAST 60
 #define SHARP_CORNER_SPEED_SLOW 10
-#define LANE_SWITCH_HANDLE_ANGLE 27
+#define LANE_SWITCH_HANDLE_ANGLE 35
 #define LANE_SWITCH_SPEED 40
+#define ANGLE_SPEED_FACTOR 0.4f
 
 
 int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 350, 100 };
@@ -150,18 +155,34 @@ int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
 int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
 int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
-int driveTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 0, 	0, 350, 50 };
-int breakTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 800, 	400, 200, 400 };
+int driveTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 0, 	200, 300, 100 };
+int breakTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 600, 	150, 150, 150 };
+
+int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 1500, 1200, 250, 750, 750, 1000, 1500 };
 
 int* driveTimeForSharpTurns = DRIVETIMES;
 int* breakTimeForSharpTurns = BREAKTIMES;
+int* obstacleAcceleration = obstacleAccelerationTimeCar4;
+
 
 void handle(int steeringAngle){
+//	if(abs(state.Angle) < 10 && abs(steeringAngle) > 10){
+//		cnt3 = 0;
+//	}
 	setServo(steeringAngle*HANDLE_FACTOR);
 	state.Angle = steeringAngle;
 }
 void motor(int speedMotorLeft, int speedMotorRight){
-	setMotor(speedMotorLeft*SPEED_FACTOR, speedMotorRight*SPEED_FACTOR);
+	if(speedMotorLeft < 0 && speedMotorRight < 0){
+		setMotor(speedMotorLeft, speedMotorRight);
+	}else if(cnt2 < obstacleAcceleration[CURRENT_OBSTACLE]){
+		// in the first seconds drive with full speed
+		setMotor(speedMotorLeft, speedMotorRight);
+//	}else if(cnt3 < 200){
+//		setMotor(speedMotorLeft*SPEED_FACTOR*0.5, speedMotorRight*SPEED_FACTOR*0.3);
+	}else{
+		setMotor(speedMotorLeft*SPEED_FACTOR, speedMotorRight*SPEED_FACTOR);
+	}
 	state.MotorLeft = speedMotorLeft;
 	state.MotorRight = speedMotorRight;
 }
@@ -207,6 +228,7 @@ void main(void)
 				{
 					state.Pattern = WAIT_FOR_STARTBAR;
 					cnt1 = 0;
+					cnt2 = 0;
 					break;
 				}
 				if (cnt1 < 100)
@@ -231,6 +253,7 @@ void main(void)
 					led_out(0x0);
 					state.Pattern = NORMAL_TRACE;
 					cnt1 = 0;
+					cnt2 = 0;
 					break;
 				}
 				if (cnt1 < 50)
@@ -299,12 +322,14 @@ void main(void)
 				// new reading is now a cross line than the previous reading was false and we
 				// go into the cross line state otherwise it really was a left line and we go
 				// into the left line state.
+				timer(WAIT_HALF_LINE_TIMER);//todo remove timer
+				state.Sensor = readSensorInfo();
 				led_out(0x2);
 				if (state.Sensor.Byte == CROSS_LINE)
 				{
 					state.Pattern = CROSS_LINE;
 				}
-				else if(cnt1 > 10)
+				else
 				{
 					state.Pattern = nextPattern;
 				}
@@ -383,6 +408,7 @@ void main(void)
 					state.TraceMask = LEFT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
+					obstacleCounter++;
 				}
 //				else if(cnt1 < 200){
 //					PRINT_L("sharp corner left wait 200ms");
@@ -414,6 +440,7 @@ void main(void)
 					state.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
 					sharpTurnCounter++;
+					obstacleCounter++;
 				}
 //				else if(cnt1 < 200){
 //					PRINT_L("sharp corner right wait 200ms");
@@ -457,7 +484,7 @@ void main(void)
 				setSpeed(-LANE_SWITCH_HANDLE_ANGLE, LANE_SWITCH_SPEED);
 
 				led_out(0x3);
-				if (maskSensorInfo(state.Sensor, MASK2_4).Byte != 0x00)
+				if (maskSensorInfo(state.Sensor, MASK2_2).Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -468,6 +495,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
+					obstacleCounter++;
 				}
 				DBG();
 				break;
@@ -478,7 +506,7 @@ void main(void)
 				setSpeed(LANE_SWITCH_HANDLE_ANGLE, LANE_SWITCH_SPEED);
 				led_out(0x3);
 				
-				if (maskSensorInfo(state.Sensor, MASK4_2).Byte != 0x00)
+				if (maskSensorInfo(state.Sensor, MASK2_2).Byte != 0x00)
 				{
 					// we go into pattern normal trace if the 2 outer most sensors are off and another sensor is on
 					// if we would go directly into the normal trace state if the outer most sensor detects the line
@@ -489,6 +517,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = LEFT_MASK;
 					cnt2 = 0;
+					obstacleCounter++;
 				}
 				DBG();
 				break;
@@ -632,7 +661,7 @@ void setSpeed(int handleAngle, int maxSpeed)
 {
 	int angleFactor = abs(handleAngle) * abs(maxSpeed) / 45;
 
-	int fasterSpeed = abs(maxSpeed) - angleFactor * 0.1f;
+	int fasterSpeed = abs(maxSpeed) - angleFactor * ANGLE_SPEED_FACTOR;
 	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 200.0f));
 
 	if(maxSpeed < 0){
@@ -664,6 +693,7 @@ void Excep_CMT0_CMI0(void)
 	cnt0++;
 	cnt1++;
 	cnt2++;
+	cnt3++;
 	state.SysTime++;
 }
 
