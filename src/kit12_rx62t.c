@@ -13,33 +13,37 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 4
+#define CAR 1
 #define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
-#define SERVO_CENTER_CAR_4 2370
+#define SERVO_CENTER_CAR_4 2418
 #if CAR == 1
 	#define SERVO_CENTER    SERVO_CENTER_CAR_1          /* Servo center value          */
-	#define DRIVETIMES driveTimeForSharpTurnsCar1
-	#define BREAKTIMES breakTimeForSharpTurnsCar1
+	#define DRIVETIMES obstacleDriveTime1
+	#define BREAKTIMES obstacleBreakTime1
+	#define ACCELERATIONTIMES obstacleAccelerationTimeCar1
 	#define HANDLE_FACTOR -1
 	#define SPEED_FACTOR 1
 #elif CAR == 2
 	#define SERVO_CENTER    SERVO_CENTER_CAR_2          /* Servo center value          */
-	#define DRIVETIMES driveTimeForSharpTurnsCar2
-	#define BREAKTIMES breakTimeForSharpTurnsCar2
+	#define DRIVETIMES obstacleDriveTime2
+	#define BREAKTIMES obstacleBreakTime2
+	#define ACCELERATIONTIMES obstacleAccelerationTimeCar2
 	#define HANDLE_FACTOR 1
 	#define SPEED_FACTOR 1
 #elif CAR == 3
 	#define SERVO_CENTER    SERVO_CENTER_CAR_3          /* Servo center value          */
-	#define DRIVETIMES driveTimeForSharpTurnsCar3
-	#define BREAKTIMES breakTimeForSharpTurnsCar3
+	#define DRIVETIMES obstacleDriveTime3
+	#define BREAKTIMES obstacleBreakTime3
+	#define ACCELERATIONTIMES obstacleAccelerationTimeCar3
 	#define HANDLE_FACTOR 1
 	#define SPEED_FACTOR 1
 #elif CAR == 4
 	#define SERVO_CENTER    SERVO_CENTER_CAR_4          /* Servo center value          */
-	#define DRIVETIMES driveTimeForSharpTurnsCar4
-	#define BREAKTIMES breakTimeForSharpTurnsCar4
+	#define DRIVETIMES obstacleDriveTime4
+	#define BREAKTIMES obstacleBreakTime4
+	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR 1
 	#define SPEED_FACTOR 0.7
 #else
@@ -131,14 +135,12 @@ Message state = {0};
 int previousHandleAngle = 0;
 int trackPosition = 0;
 
-/* 90° Turn Counter */
-int sharpTurnCounter = 0;
+/* 90° Turn and Line Switch Counter */
 int obstacleCounter = 0;
 #define TOTAL_OBSTACLES 7
-#define TOTAL_SHARP_TURNS 4
-#define NUM_SHARP_TURN (sharpTurnCounter % TOTAL_SHARP_TURNS)
 #define CURRENT_OBSTACLE (obstacleCounter % TOTAL_OBSTACLES)
 
+//todo: change these factors for each car
 #define WAIT_HALF_LINE_TIMER 10
 #define WAIT_FOR_LANE_CHANGE_SPEED 60
 #define SHARP_CORNER_HANDLE_ANGLE 46
@@ -146,40 +148,39 @@ int obstacleCounter = 0;
 #define SHARP_CORNER_SPEED_SLOW 10
 #define LANE_SWITCH_HANDLE_ANGLE 35
 #define LANE_SWITCH_SPEED 40
-#define ANGLE_SPEED_FACTOR 0.4f
+#define ANGLE_SPEED_FACTOR 0.2f
 
+// 90° 90° 90° LSR LSL 90° LSR
+int obstacleDriveTime1[TOTAL_OBSTACLES] = {0, 	200, 	350, 	0,		0, 		100, 0 };
+int obstacleBreakTime1[TOTAL_OBSTACLES] = {650, 200, 	200, 	0, 		0, 		300, 0 };
+int obstacleDriveTime2[TOTAL_OBSTACLES] = {0, 	200, 	500, 	0, 		0, 		100, 0 };
+int obstacleBreakTime2[TOTAL_OBSTACLES] = {650, 200, 	100, 	0, 		0, 		300, 0 };
+int obstacleDriveTime3[TOTAL_OBSTACLES] = {100, 200, 	500, 	0, 		0, 		100, 0 };
+int obstacleBreakTime3[TOTAL_OBSTACLES] = {500, 200, 	100, 	0, 		0, 		300, 0 };
+int obstacleDriveTime4[TOTAL_OBSTACLES] = {0, 	200, 	250, 	100, 	100,	100, 100 };
+int obstacleBreakTime4[TOTAL_OBSTACLES] = {800, 150, 	150, 	100, 	100, 	150, 100 };
 
-int driveTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 0, 	200, 350, 100 };
-int breakTimeForSharpTurnsCar1[TOTAL_SHARP_TURNS] = { 650, 	200, 200, 300 };
-int driveTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 0, 	200, 500, 100 };
-int breakTimeForSharpTurnsCar2[TOTAL_SHARP_TURNS] = { 650, 	200, 100, 300 };
-int driveTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 100, 	200, 500, 100 };
-int breakTimeForSharpTurnsCar3[TOTAL_SHARP_TURNS] = { 500, 	200, 100, 300 };
-int driveTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 0, 	200, 300, 100 };
-int breakTimeForSharpTurnsCar4[TOTAL_SHARP_TURNS] = { 600, 	150, 150, 150 };
-
+int obstacleAccelerationTimeCar1[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
+int obstacleAccelerationTimeCar2[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
+int obstacleAccelerationTimeCar3[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
 int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 1500, 1200, 250, 750, 750, 1000, 1500 };
 
-int* driveTimeForSharpTurns = DRIVETIMES;
-int* breakTimeForSharpTurns = BREAKTIMES;
-int* obstacleAcceleration = obstacleAccelerationTimeCar4;
+int* obstacleDriveTime = DRIVETIMES;
+int* obstacleBreakTime = BREAKTIMES;
+int* obstacleAccelerationTime = ACCELERATIONTIMES;
 
 
 void handle(int steeringAngle){
-//	if(abs(state.Angle) < 10 && abs(steeringAngle) > 10){
-//		cnt3 = 0;
-//	}
 	setServo(steeringAngle*HANDLE_FACTOR);
 	state.Angle = steeringAngle;
 }
+
 void motor(int speedMotorLeft, int speedMotorRight){
 	if(speedMotorLeft < 0 && speedMotorRight < 0){
 		setMotor(speedMotorLeft, speedMotorRight);
-	}else if(cnt2 < obstacleAcceleration[CURRENT_OBSTACLE]){
+	}else if(cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE]){
 		// in the first seconds drive with full speed
 		setMotor(speedMotorLeft, speedMotorRight);
-//	}else if(cnt3 < 200){
-//		setMotor(speedMotorLeft*SPEED_FACTOR*0.5, speedMotorRight*SPEED_FACTOR*0.3);
 	}else{
 		setMotor(speedMotorLeft*SPEED_FACTOR, speedMotorRight*SPEED_FACTOR);
 	}
@@ -213,8 +214,6 @@ void main(void)
 	state.Pattern = WAIT_FOR_SWITCH;
 	state.TraceMask = NORMAL_MASK;
 
-	//BREAK2();
-
 	while (1)
 	{
 		state.Sensor = readSensorInfo();
@@ -223,7 +222,6 @@ void main(void)
 		{
 			case WAIT_FOR_SWITCH:
 				/* Wait for switch input */
-				//PRINT_L("wait for switch");
 				if (pushsw_get())
 				{
 					state.Pattern = WAIT_FOR_STARTBAR;
@@ -246,7 +244,6 @@ void main(void)
 				break;
 			case WAIT_FOR_STARTBAR:
 				/* Check if start bar is open */
-				//PRINT_L("wait for startbar");
 				if (!startbar_get())
 				{
 					/* Start!! */
@@ -322,19 +319,20 @@ void main(void)
 				// new reading is now a cross line than the previous reading was false and we
 				// go into the cross line state otherwise it really was a left line and we go
 				// into the left line state.
-				timer(WAIT_HALF_LINE_TIMER);//todo remove timer
 				state.Sensor = readSensorInfo();
 				led_out(0x2);
 				if (state.Sensor.Byte == CROSS_LINE)
 				{
 					state.Pattern = CROSS_LINE;
+					cnt1 = 0;
+					DBG();
 				}
-				else
+				else if(cnt1 > 20)
 				{
 					state.Pattern = nextPattern;
+					cnt1 = 0;
+					DBG();
 				}
-				cnt1 = 0;
-				DBG();
 				break;
 			case CROSS_LINE:
 			{
@@ -366,11 +364,11 @@ void main(void)
 				{
 					// as long as we haven't detected in which direction we have to steer,
 					// we should still follow the line.
-					if (cnt1 < driveTimeForSharpTurns[NUM_SHARP_TURN]){
+					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
 						// drive with the same speed than before
 						setSpeedAndHandleAngle(100);
 					}
-					else if (cnt1 < breakTimeForSharpTurns[NUM_SHARP_TURN] + driveTimeForSharpTurns[NUM_SHARP_TURN])
+					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
 					{
 						// in the first 200 ms we stop the motors completely to break even
 						// harder to faster get to the desired speed of 40%. Eventually we
@@ -399,6 +397,7 @@ void main(void)
 					motor(SHARP_CORNER_SPEED_SLOW, SHARP_CORNER_SPEED_FAST);
 				}
 				//Todo try without cnt1 > 200
+				// we could wait till we see nothing and then go into this section if a sensor is on again
 				if (cnt1 > 200 && maskSensorInfo(state.Sensor, LEFT_SENSORS_2).Byte != 0x00)
 				{
 					// to prevent a wrong reading as long as we are on the line with most
@@ -407,14 +406,8 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = LEFT_MASK;
 					cnt2 = 0;
-					sharpTurnCounter++;
 					obstacleCounter++;
 				}
-//				else if(cnt1 < 200){
-//					PRINT_L("sharp corner left wait 200ms");
-//				}else{
-//					PRINT("sharp corner left wait, sensor %d", sensor.Byte);
-//				}
 				DBG();
 				break;
 			}
@@ -439,14 +432,8 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
-					sharpTurnCounter++;
 					obstacleCounter++;
 				}
-//				else if(cnt1 < 200){
-//					PRINT_L("sharp corner right wait 200ms");
-//				}else{
-//					PRINT("sharp corner right wait, sensor %d", sensor.Byte);
-//				}
 				DBG();
 				break;
 			}
@@ -459,8 +446,23 @@ void main(void)
 				}
 				else
 				{
-					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
+					// as long as we haven't detected in which direction we have to steer,
+					// we should still follow the line.
+					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
+						// drive with the same speed than before
+						setSpeedAndHandleAngle(100);
+					}
+					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
+					{
+						// in the first 200 ms we stop the motors completely to break even
+						// harder to faster get to the desired speed of 40%. Eventually we
+						// could break with negative values as well.
+						setSpeedAndHandleAngle(-100);
+					}
+					else
+					{
+						setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
+					}
 				}
 				DBG();
 				break;
@@ -473,8 +475,23 @@ void main(void)
 				}
 				else
 				{
-					// while we wait for the line switch we are still steering and turning the motor down to 40%
-					setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
+					// as long as we haven't detected in which direction we have to steer,
+					// we should still follow the line.
+					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
+						// drive with the same speed than before
+						setSpeedAndHandleAngle(100);
+					}
+					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
+					{
+						// in the first 200 ms we stop the motors completely to break even
+						// harder to faster get to the desired speed of 40%. Eventually we
+						// could break with negative values as well.
+						setSpeedAndHandleAngle(-100);
+					}
+					else
+					{
+						setSpeedAndHandleAngle(WAIT_FOR_LANE_CHANGE_SPEED);
+					}
 				}
 				DBG();
 				break;
