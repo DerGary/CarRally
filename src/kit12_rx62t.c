@@ -13,39 +13,47 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 1
+#define CAR 5
 #define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
 #define SERVO_CENTER_CAR_4 2418
+#define SERVO_CENTER_CAR_5 2226
 #if CAR == 1
 	#define SERVO_CENTER    SERVO_CENTER_CAR_1          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime1
 	#define BREAKTIMES obstacleBreakTime1
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar1
 	#define HANDLE_FACTOR -1
-	#define SPEED_FACTOR 1
+	#define SPEED_FACTOR 100
 #elif CAR == 2
 	#define SERVO_CENTER    SERVO_CENTER_CAR_2          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime2
 	#define BREAKTIMES obstacleBreakTime2
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar2
 	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 1
+	#define SPEED_FACTOR 100
 #elif CAR == 3
 	#define SERVO_CENTER    SERVO_CENTER_CAR_3          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime3
 	#define BREAKTIMES obstacleBreakTime3
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar3
 	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 1
+	#define SPEED_FACTOR 100
 #elif CAR == 4
 	#define SERVO_CENTER    SERVO_CENTER_CAR_4          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime4
 	#define BREAKTIMES obstacleBreakTime4
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 0.7
+	#define SPEED_FACTOR 65
+#elif CAR == 5
+	#define SERVO_CENTER    SERVO_CENTER_CAR_5          /* Servo center value          */
+	#define DRIVETIMES obstacleDriveTime4
+	#define BREAKTIMES obstacleBreakTime4
+	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
+	#define HANDLE_FACTOR 1
+	#define SPEED_FACTOR 65
 #else
 	#error Unknown CAR
 #endif
@@ -88,8 +96,8 @@
 #define RIGHT_MASK MASK1_4
 #define NORMAL_MASK MASK4_4
 
-#define RIGHT_LINE 	0x0f //O O O 0  X X X X
-#define LEFT_LINE 	0xf0 //X X X X  0 O O O
+#define RIGHT_LINE 	0x1f //O O O 0  X X X X
+#define LEFT_LINE 	0xf8 //X X X X  0 O O O
 #define CROSS_LINE  0xff //X X X X  X X X X
 
 #define WAIT_FOR_SWITCH 0
@@ -137,53 +145,56 @@ int trackPosition = 0;
 
 /* 90° Turn and Line Switch Counter */
 int obstacleCounter = 0;
-#define TOTAL_OBSTACLES 7
+#define TOTAL_OBSTACLES 8
 #define CURRENT_OBSTACLE (obstacleCounter % TOTAL_OBSTACLES)
 
 //todo: change these factors for each car
 #define WAIT_HALF_LINE_TIMER 10
-#define WAIT_FOR_LANE_CHANGE_SPEED 60
+#define WAIT_FOR_LANE_CHANGE_SPEED 70*(SPEED_FACTOR/100.0)
 #define SHARP_CORNER_HANDLE_ANGLE 46
 #define SHARP_CORNER_SPEED_FAST 60
 #define SHARP_CORNER_SPEED_SLOW 10
 #define LANE_SWITCH_HANDLE_ANGLE 35
-#define LANE_SWITCH_SPEED 40
-#define ANGLE_SPEED_FACTOR 0.2f
+#define LANE_SWITCH_SPEED 30
+#define ANGLE_SPEED_FACTOR 0.15f
+#define SLOPE_DOWN_SPEED_FACTOR 50
+#define OBSTACLE_DRIVE_SPEED SPEED_FACTOR
 
-// 90° 90° 90° LSR LSL 90° LSR
-int obstacleDriveTime1[TOTAL_OBSTACLES] = {0, 	200, 	350, 	0,		0, 		100, 0 };
-int obstacleBreakTime1[TOTAL_OBSTACLES] = {650, 200, 	200, 	0, 		0, 		300, 0 };
-int obstacleDriveTime2[TOTAL_OBSTACLES] = {0, 	200, 	500, 	0, 		0, 		100, 0 };
-int obstacleBreakTime2[TOTAL_OBSTACLES] = {650, 200, 	100, 	0, 		0, 		300, 0 };
-int obstacleDriveTime3[TOTAL_OBSTACLES] = {100, 200, 	500, 	0, 		0, 		100, 0 };
-int obstacleBreakTime3[TOTAL_OBSTACLES] = {500, 200, 	100, 	0, 		0, 		300, 0 };
-int obstacleDriveTime4[TOTAL_OBSTACLES] = {0, 	200, 	250, 	100, 	100,	100, 100 };
-int obstacleBreakTime4[TOTAL_OBSTACLES] = {800, 150, 	150, 	100, 	100, 	150, 100 };
+//LSR LSL 90° 90° 90° 90° 90° 90°
+int obstacleDriveTime1[TOTAL_OBSTACLES] = {0, 	200, 	350, 	0,		0, 		100, 0,0 };
+int obstacleBreakTime1[TOTAL_OBSTACLES] = {650, 200, 	200, 	0, 		0, 		300, 0,0};
+int obstacleDriveTime2[TOTAL_OBSTACLES] = {0, 	200, 	500, 	0, 		0, 		100, 0,0 };
+int obstacleBreakTime2[TOTAL_OBSTACLES] = {650, 200, 	100, 	0, 		0, 		300, 0,0 };
+int obstacleDriveTime3[TOTAL_OBSTACLES] = {100, 200, 	500, 	0, 		0, 		100, 0,0 };
+int obstacleBreakTime3[TOTAL_OBSTACLES] = {500, 200, 	100, 	0, 		0, 		300, 0,0 };
+int obstacleDriveTime4[TOTAL_OBSTACLES] = {0, 	0, 	100, 	150, 	0, 0, 0,0 };
+int obstacleBreakTime4[TOTAL_OBSTACLES] = {0, 	0, 	150, 	100, 	50, 100, 100, 150 };
 
-int obstacleAccelerationTimeCar1[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
-int obstacleAccelerationTimeCar2[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
-int obstacleAccelerationTimeCar3[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0 };
-int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 1500, 1200, 250, 750, 750, 1000, 1500 };
+int obstacleAccelerationTimeCar1[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
+int obstacleAccelerationTimeCar2[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
+int obstacleAccelerationTimeCar3[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
+int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 700, 500, 700, 400, 1000, 100, 300, 400};
 
 int* obstacleDriveTime = DRIVETIMES;
 int* obstacleBreakTime = BREAKTIMES;
 int* obstacleAccelerationTime = ACCELERATIONTIMES;
+char slopeup = 0;
+char ontop = 0;
+char slopedown = 0;
 
 
 void handle(int steeringAngle){
+	if(steeringAngle > 45){
+		steeringAngle = 45;
+	}else if(steeringAngle < -45){
+		steeringAngle = -45;
+	}
 	setServo(steeringAngle*HANDLE_FACTOR);
 	state.Angle = steeringAngle;
 }
 
 void motor(int speedMotorLeft, int speedMotorRight){
-	if(speedMotorLeft < 0 && speedMotorRight < 0){
-		setMotor(speedMotorLeft, speedMotorRight);
-	}else if(cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE]){
-		// in the first seconds drive with full speed
-		setMotor(speedMotorLeft, speedMotorRight);
-	}else{
-		setMotor(speedMotorLeft*SPEED_FACTOR, speedMotorRight*SPEED_FACTOR);
-	}
+	setMotor(speedMotorLeft, speedMotorRight);
 	state.MotorLeft = speedMotorLeft;
 	state.MotorRight = speedMotorRight;
 }
@@ -292,13 +303,13 @@ void main(void)
 					state.Pattern = CROSS_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE)
+				else if (maskSensorInfo(state.Sensor, MASK4_1).Byte == LEFT_LINE)
 				{
 					state.Pattern = WAIT_HALF_LINE;
 					nextPattern = LEFT_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK0_4).Byte == RIGHT_LINE)
+				else if (maskSensorInfo(state.Sensor, MASK1_4).Byte == RIGHT_LINE)
 				{
 					state.Pattern = WAIT_HALF_LINE;
 					nextPattern = RIGHT_LINE;
@@ -338,7 +349,7 @@ void main(void)
 			{
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
-				if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE && cnt1 > 100)
+				if (maskSensorInfo(state.Sensor, MASK4_1).Byte == LEFT_LINE && cnt1 > 100)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -349,7 +360,7 @@ void main(void)
 					state.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK0_4).Byte == RIGHT_LINE && cnt1 > 100)
+				else if (maskSensorInfo(state.Sensor, MASK1_4).Byte == RIGHT_LINE && cnt1 > 100)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -366,7 +377,7 @@ void main(void)
 					// we should still follow the line.
 					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
 						// drive with the same speed than before
-						setSpeedAndHandleAngle(100);
+						setSpeedAndHandleAngle(OBSTACLE_DRIVE_SPEED);
 					}
 					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
 					{
@@ -450,7 +461,7 @@ void main(void)
 					// we should still follow the line.
 					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
 						// drive with the same speed than before
-						setSpeedAndHandleAngle(100);
+						setSpeedAndHandleAngle(OBSTACLE_DRIVE_SPEED);
 					}
 					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
 					{
@@ -479,7 +490,7 @@ void main(void)
 					// we should still follow the line.
 					if (cnt1 < obstacleDriveTime[CURRENT_OBSTACLE]){
 						// drive with the same speed than before
-						setSpeedAndHandleAngle(100);
+						setSpeedAndHandleAngle(OBSTACLE_DRIVE_SPEED);
 					}
 					else if (cnt1 < obstacleBreakTime[CURRENT_OBSTACLE] + obstacleDriveTime[CURRENT_OBSTACLE])
 					{
@@ -571,7 +582,33 @@ int setHandleAngleFromResult(SensorInfo sensorResult){
 void traceTrack()
 {
 	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
-	if (maskedSensorResult.Byte == 0x00)
+
+	unsigned char speedFactor = 100;
+	if(cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE]){
+		speedFactor = 100;
+	}else{
+		speedFactor = SPEED_FACTOR;
+	}
+
+	if(slopedown == 1){
+		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
+		if(cnt0 > 1500){
+			slopedown = 0;
+		}
+	}
+
+	if(CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00){
+		if(slopeup == 0 && cnt0 > 100){
+			slopeup = 1;
+			cnt0 = 0;
+		}else if(slopeup == 1 && ontop == 1){
+			slopedown = 1;
+			ontop = 0;
+			slopeup = 0;
+		}
+	}else if(CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1){
+		ontop = 1;
+	}else if (maskedSensorResult.Byte == 0x00)
 	{
 		if(cnt1 > 1000){
 			// after 1 second stop, you wont find the track again ;)
@@ -619,7 +656,7 @@ void traceTrack()
 		trackPosition = RIGHT;
 	}
 
-	setSpeed(handleAngle, 100);
+	setSpeed(handleAngle, speedFactor);
 	cnt1 = 0;
 }
 
@@ -641,7 +678,7 @@ int interpolateAngle(int measurement){
 
 int getSteeringAngle(SensorInfo sensorInfoResult)
 {
-	static int steeringTable[] = { 0, 3, 8, 12, 20, 28, 36, 44 };
+	static int steeringTable[] = { 0, 3, 8, 12, 28, 36, 45, 55 };
 
 	int sensorResult = sensorInfoResult.Byte;
 	if (sensorResult == 0)
@@ -679,7 +716,7 @@ void setSpeed(int handleAngle, int maxSpeed)
 	int angleFactor = abs(handleAngle) * abs(maxSpeed) / 45;
 
 	int fasterSpeed = abs(maxSpeed) - angleFactor * ANGLE_SPEED_FACTOR;
-	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 200.0f));
+	int slowerSpeed = fasterSpeed - (fasterSpeed * (angleFactor / 300.0f));
 
 	if(maxSpeed < 0){
 		fasterSpeed = -fasterSpeed;

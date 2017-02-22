@@ -8,7 +8,7 @@
 #ifndef DEBUG_H_
 #define DEBUG_H_
 
-#define ENABLE_DEBUG 1
+#define ENABLE_DEBUG 0
 #define BUFFER_OUTPUT 1
 
 #include <stdio.h>
