@@ -224,9 +224,10 @@ void emergencyExit(void)
 //Reifen anfeilen
 //Abstauben
 //Pinsel sauber machen
-//Verkabelung überprüfen
+//Verkabelung überprüfen (nicht schleifen / nicht halb ab)
 //Frische Batterien
 //Klappe einprogrammieren
+//
 
 
 
