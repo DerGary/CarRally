@@ -144,6 +144,7 @@ unsigned long cnt2;
 unsigned long cnt3;
 unsigned long cntx = 20000;
 unsigned long cnty = 20000;
+unsigned long timeCounter;
 unsigned char nextPattern = 0;
 
 // Holds the program state
@@ -236,6 +237,35 @@ void main(void)
 
 	while (1)
 	{
+    	if (timeCounter > 600)
+    		timeCounter = 0;
+
+    	if (timeCounter == 0) {
+    		LED_strip_set_rgb(0, 0, 255);
+    	}else if (timeCounter == 50) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}else if (timeCounter == 100) {
+        	LED_strip_set_rgb(0, 0, 255);
+    	}else if (timeCounter == 150) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}else if (timeCounter == 200) {
+        	LED_strip_set_rgb(0, 0, 255);
+    	}else if (timeCounter == 250) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}else if (timeCounter == 300) {
+        	LED_strip_set_rgb(255, 0, 0);
+    	}else if (timeCounter == 350) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}else if (timeCounter == 400) {
+        	LED_strip_set_rgb(255, 0, 0);
+    	}else if (timeCounter == 450) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}else if (timeCounter == 500) {
+        	LED_strip_set_rgb(255, 0, 0);
+    	}else if (timeCounter == 550) {
+        	LED_strip_set_rgb(0, 0, 0);
+    	}
+
 		state.Sensor = readSensorInfo();
 
 		switch (state.Pattern)
@@ -1161,6 +1191,7 @@ void Excep_CMT0_CMI0(void)
 	cnt3++;
 	cntx++;
 	cnty++;
+	timeCounter++;
 	state.SysTime++;
 }
 
