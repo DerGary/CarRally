@@ -226,6 +226,7 @@ void emergencyExit(void)
 //Pinsel sauber machen
 //Verkabelung überprüfen (nicht schleifen / nicht halb ab)
 //Frische Batterien
+//Ausrichtung vom Sensorboard / Servo
 //Klappe einprogrammieren
 //
 
