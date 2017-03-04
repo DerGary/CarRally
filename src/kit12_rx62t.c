@@ -218,6 +218,16 @@ void emergencyExit(void)
 	}
 }
 
+//TODO:
+//Schrauben festziehen (Motor/Reifen)
+//Slope überprüfen das die Sensoren ausgehen
+//Reifen anfeilen
+//Abstauben
+//Pinsel sauber machen
+//Verkabelung überprüfen
+//Frische Batterien
+//Klappe einprogrammieren
+
 
 
 /***********************************************************************/
