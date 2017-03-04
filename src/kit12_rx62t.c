@@ -13,7 +13,7 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 5
+#define CAR 4
 #define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
@@ -45,15 +45,15 @@
 	#define DRIVETIMES obstacleDriveTime4
 	#define BREAKTIMES obstacleBreakTime4
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
-	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 65
+	#define HANDLE_FACTOR -1
+	#define SPEED_FACTOR 80
 #elif CAR == 5
 	#define SERVO_CENTER    SERVO_CENTER_CAR_5          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime4
 	#define BREAKTIMES obstacleBreakTime4
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 65
+	#define SPEED_FACTOR 70
 #else
 	#error Unknown CAR
 #endif
@@ -96,8 +96,10 @@
 #define RIGHT_MASK MASK1_4
 #define NORMAL_MASK MASK4_4
 
-#define RIGHT_LINE 	0x1f //O O O 0  X X X X
-#define LEFT_LINE 	0xf8 //X X X X  0 O O O
+#define RIGHT_LINE 	0x1f //O O O X  X X X X
+#define LEFT_LINE 	0xf8 //X X X X  X O O O
+#define RIGHT_LINE_4 	0x0f //O O O O  X X X X
+#define LEFT_LINE_4 	0xf0 //X X X X  O O O O
 #define CROSS_LINE  0xff //X X X X  X X X X
 
 #define WAIT_FOR_SWITCH 0
@@ -135,6 +137,8 @@ unsigned long cnt0;
 unsigned long cnt1;
 unsigned long cnt2;
 unsigned long cnt3;
+unsigned long cntx = 20000;
+unsigned long cnty = 20000;
 unsigned char nextPattern = 0;
 
 // Holds the program state
@@ -154,8 +158,8 @@ int obstacleCounter = 0;
 #define SHARP_CORNER_HANDLE_ANGLE 46
 #define SHARP_CORNER_SPEED_FAST 60
 #define SHARP_CORNER_SPEED_SLOW 10
-#define LANE_SWITCH_HANDLE_ANGLE 35
-#define LANE_SWITCH_SPEED 30
+#define LANE_SWITCH_HANDLE_ANGLE 33
+#define LANE_SWITCH_SPEED 20
 #define ANGLE_SPEED_FACTOR 0.15f
 #define SLOPE_DOWN_SPEED_FACTOR 50
 #define OBSTACLE_DRIVE_SPEED SPEED_FACTOR
@@ -167,13 +171,13 @@ int obstacleDriveTime2[TOTAL_OBSTACLES] = {0, 	200, 	500, 	0, 		0, 		100, 0,0 };
 int obstacleBreakTime2[TOTAL_OBSTACLES] = {650, 200, 	100, 	0, 		0, 		300, 0,0 };
 int obstacleDriveTime3[TOTAL_OBSTACLES] = {100, 200, 	500, 	0, 		0, 		100, 0,0 };
 int obstacleBreakTime3[TOTAL_OBSTACLES] = {500, 200, 	100, 	0, 		0, 		300, 0,0 };
-int obstacleDriveTime4[TOTAL_OBSTACLES] = {0, 	0, 	100, 	150, 	0, 0, 0,0 };
-int obstacleBreakTime4[TOTAL_OBSTACLES] = {0, 	0, 	150, 	100, 	50, 100, 100, 150 };
+int obstacleDriveTime4[TOTAL_OBSTACLES] = {0, 	0, 	0, 	100, 	0, 0, 0,0 };
+int obstacleBreakTime4[TOTAL_OBSTACLES] = {0, 	0, 	300, 	150, 	100, 150, 200, 200 };
 
 int obstacleAccelerationTimeCar1[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
 int obstacleAccelerationTimeCar2[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
 int obstacleAccelerationTimeCar3[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
-int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 700, 500, 700, 400, 1000, 100, 300, 400};
+int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 400, 100, 600, 400, 700, 100, 300, 400};
 
 int* obstacleDriveTime = DRIVETIMES;
 int* obstacleBreakTime = BREAKTIMES;
@@ -194,7 +198,11 @@ void handle(int steeringAngle){
 }
 
 void motor(int speedMotorLeft, int speedMotorRight){
-	setMotor(speedMotorLeft, speedMotorRight);
+	if(cntx < 500){
+		setMotor(speedMotorLeft*0.3, speedMotorRight*0.3);
+	}else{
+		setMotor(speedMotorLeft, speedMotorRight);
+	}
 	state.MotorLeft = speedMotorLeft;
 	state.MotorRight = speedMotorRight;
 }
@@ -303,13 +311,13 @@ void main(void)
 					state.Pattern = CROSS_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK4_1).Byte == LEFT_LINE)
+				else if (maskSensorInfo(state.Sensor, MASK4_1).Byte == LEFT_LINE && CURRENT_OBSTACLE == 1)
 				{
 					state.Pattern = WAIT_HALF_LINE;
 					nextPattern = LEFT_LINE;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK1_4).Byte == RIGHT_LINE)
+				else if (maskSensorInfo(state.Sensor, MASK1_4).Byte == RIGHT_LINE && CURRENT_OBSTACLE == 0)
 				{
 					state.Pattern = WAIT_HALF_LINE;
 					nextPattern = RIGHT_LINE;
@@ -349,7 +357,7 @@ void main(void)
 			{
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
-				if (maskSensorInfo(state.Sensor, MASK4_1).Byte == LEFT_LINE && cnt1 > 100)
+				if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE_4 && cnt1 > 100)
 				{
 					// we ignore the right sensors and only evaluate the left ones if all
 					// the left ones detect the line it means it is a left turn. So we set
@@ -360,7 +368,7 @@ void main(void)
 					state.Pattern = SHARP_CORNER_LEFT;
 					cnt1 = 0;
 				}
-				else if (maskSensorInfo(state.Sensor, MASK1_4).Byte == RIGHT_LINE && cnt1 > 100)
+				else if (maskSensorInfo(state.Sensor, MASK0_4).Byte == RIGHT_LINE_4 && cnt1 > 100)
 				{
 					// we ignore the left sensors and only evaluate the right ones if all
 					// the right ones detect the line it means it is a right turn. So we set
@@ -578,41 +586,54 @@ int setHandleAngleFromResult(SensorInfo sensorResult){
 	previousHandleAngle = handleAngle;
 	return handleAngle;
 }
-
+unsigned char alreadyInCurve = 0;
 void traceTrack()
 {
 	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
 
 	unsigned char speedFactor = 100;
-	if(cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE]){
+	if (cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE])
+	{
 		speedFactor = 100;
-	}else{
+	}
+	else
+	{
 		speedFactor = SPEED_FACTOR;
 	}
 
-	if(slopedown == 1){
+	if (slopedown == 1)
+	{
 		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if(cnt0 > 1500){
+		if (cnt0 > 1500)
+		{
 			slopedown = 0;
 		}
 	}
 
-	if(CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00){
-		if(slopeup == 0 && cnt0 > 100){
+	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	{
+		if (slopeup == 0 && cnt0 > 100)
+		{
 			slopeup = 1;
 			cnt0 = 0;
-		}else if(slopeup == 1 && ontop == 1){
+		}
+		else if (slopeup == 1 && ontop == 1)
+		{
 			slopedown = 1;
 			ontop = 0;
 			slopeup = 0;
 		}
-	}else if(CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1){
-		ontop = 1;
-	}else if (maskedSensorResult.Byte == 0x00)
+	}
+	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
 	{
-		if(cnt1 > 1000){
+		ontop = 1;
+	}
+	else if (maskedSensorResult.Byte == 0x00)
+	{
+		if (cnt1 > 1000)
+		{
 			// after 1 second stop, you wont find the track again ;)
-			motor(0,0);
+			motor(0, 0);
 			state.Pattern = WAIT_FOR_LOST_TRACK;
 			return;
 		}
@@ -624,13 +645,10 @@ void traceTrack()
 
 		int handleAngle = previousHandleAngle;
 
-		if (abs(handleAngle) > 45)
-			handleAngle = 45 * trackPosition;
+		if (abs(handleAngle) > 45) handleAngle = 45 * trackPosition;
 
-		if (state.TraceMask == LEFT_MASK)
-			state.TraceMask = MASK4_0;
-		else if (state.TraceMask == RIGHT_MASK)
-			state.TraceMask = MASK0_4;
+		if (state.TraceMask == LEFT_MASK) state.TraceMask = MASK4_0;
+		else if (state.TraceMask == RIGHT_MASK) state.TraceMask = MASK0_4;
 
 		handle(handleAngle);
 		setSpeed(handleAngle, 40);
@@ -641,6 +659,22 @@ void traceTrack()
 	// to set the mask we must check the masked result because an unmasked result would
 	// return a wrong angle or zero if the 2 outer most sensors are active which would
 	// reset the mask.
+
+	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+	{
+		cntx = 0;
+		alreadyInCurve = 1;
+	}
+	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+	{
+		cnty = 0;
+	}
+	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
+	{
+		alreadyInCurve = 0;
+	}
+
+
 	if (abs(handleAngle) < 5)
 	{
 		state.TraceMask = NORMAL_MASK;
@@ -713,6 +747,7 @@ int previousMotorSpeedRight = 0;
 int previousMotorSpeedLeft = 0;
 void setSpeed(int handleAngle, int maxSpeed)
 {
+
 	int angleFactor = abs(handleAngle) * abs(maxSpeed) / 45;
 
 	int fasterSpeed = abs(maxSpeed) - angleFactor * ANGLE_SPEED_FACTOR;
@@ -725,15 +760,18 @@ void setSpeed(int handleAngle, int maxSpeed)
 
 	int motorSpeedLeft;
 	int motorSpeedRight;
-	if (handleAngle < 0)
+	if (handleAngle < -3)
 	{
 		motorSpeedRight = fasterSpeed;
 		motorSpeedLeft = slowerSpeed;
 	}
-	else
+	else if(handleAngle > 3)
 	{
 		motorSpeedRight = slowerSpeed;
 		motorSpeedLeft = fasterSpeed;
+	}else {
+		motorSpeedRight = maxSpeed;
+		motorSpeedLeft = maxSpeed;
 	}
 	motor(motorSpeedLeft, motorSpeedRight);
 }
@@ -748,6 +786,8 @@ void Excep_CMT0_CMI0(void)
 	cnt1++;
 	cnt2++;
 	cnt3++;
+	cntx++;
+	cnty++;
 	state.SysTime++;
 }
 
