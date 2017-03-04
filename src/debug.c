@@ -46,9 +46,10 @@ void sendDebugBuffer()
 {
 	size_t currentMsg = BufferPos;
 	size_t lastMsg = (currentMsg+1) % MsgBufferSize;
-	fwrite(&MsgBuffer + lastMsg*sizeof(Message), sizeof(Message), MsgBufferSize- lastMsg, stdout);
-	fwrite(&MsgBuffer, sizeof(Message), currentMsg+1, stdout);
+	//fwrite(&MsgBuffer + lastMsg*sizeof(Message), sizeof(Message), MsgBufferSize- lastMsg, stdout);
+	//fwrite(&MsgBuffer, sizeof(Message), currentMsg+1, stdout);
 
+	fwrite(&MsgBuffer, sizeof(Message), MsgBufferSize, stdout);
 	fflush(stdout);
 }
 

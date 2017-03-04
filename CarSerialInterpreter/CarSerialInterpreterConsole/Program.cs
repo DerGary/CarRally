@@ -24,7 +24,7 @@ namespace CarSerialInterpreterConsole
 
     class Program
     {
-        const string comPort = "COM4";
+        const string comPort = "COM3";
 
         const int Baud9600 = 9600;
         const int Baud38400 = 38400;
@@ -40,6 +40,7 @@ namespace CarSerialInterpreterConsole
 
             Console.WriteLine($"Connecting on {comPort}...");
             port.Open();
+            Console.BackgroundColor = ConsoleColor.Green;
             Console.WriteLine("Connected. Wait for data...");
             
             List<Message> messages = new List<Message>();
@@ -53,6 +54,7 @@ namespace CarSerialInterpreterConsole
                     Thread.Sleep(100);
                 }
 
+                Console.BackgroundColor = ConsoleColor.Black;
                 Console.WriteLine("Receiving data...");
 
                 // read while we receive data
@@ -103,10 +105,22 @@ namespace CarSerialInterpreterConsole
             using (var sw = new StreamWriter(File.OpenWrite(string.Format("run-{0:yyyyMMdd-HHmmss}.csv", DateTime.Now))))
             {
                 sw.WriteLine("Time;Pattern;Angle;MotorLeft;MotorRight;Sensor;TraceMask");
-                foreach (Message m in messages)
+                foreach (Message m in messages.OrderBy(m => m.SysTime))
                 {
                     sw.WriteLine("{0};0x{1:X2};{2};{3};{4};0x{5:X2};0x{6:X2}",
                         m.SysTime, m.Pattern, m.Angle, m.MotorLeft, m.MotorRight, m.Sensor, m.TraceMask);
+                }
+            }
+            using (var sw = new StreamWriter(File.OpenWrite(string.Format("run-{0:yyyyMMdd-HHmmss}-pretty.txt", DateTime.Now))))
+            {
+                sw.WriteLine("Time;Pattern;Angle;MotorLeft;MotorRight;Sensor;TraceMask");
+                foreach (Message m in messages.OrderBy(m => m.SysTime))
+                {
+                    if (m.SysTime != 0)
+                    {
+                        sw.WriteLine(PrintPretty(m));
+                    }
+                    
                 }
             }
 
@@ -119,20 +133,23 @@ namespace CarSerialInterpreterConsole
         {
             if (m.SysTime != 0)
             {
-                Console.WriteLine("{0,7}: {1,22} {2,4}°   [{3,4}% {4,4}%]   {5} {6}",
+                Console.WriteLine(PrintPretty(m));
+
+                return true;
+            }
+
+            return false;
+        }
+        private static string PrintPretty(Message m)
+        {
+            return string.Format("{0,7}: {1,22} {2,4}°   [{3,4}% {4,4}%]   {5} {6}",
                     m.SysTime,
                     PatternName(m.Pattern),
                     m.Angle,
                     m.MotorLeft,
                     m.MotorRight,
                     BitPattern(m.Sensor, '.', 'X'),
-                    BitPattern(m.TraceMask, '_', 'X')
-                    );
-
-                return true;
-            }
-
-            return false;
+                    BitPattern(m.TraceMask, '_', 'X'));
         }
 
         private static string BitPattern(byte v, char zeroChar, char oneChar)
@@ -157,8 +174,8 @@ namespace CarSerialInterpreterConsole
                 case 8: return "WAIT_HALF_LINE";
                 case 10: return "SEARCH_LINE_RIGHT";
                 case 11: return "SEARCH_LINE_LEFT";
-                case 0x0f: return "RIGHT_LINE";
-                case 0xf0: return "LEFT_LINE";
+                case 0x1f: return "RIGHT_LINE";
+                case 0xf8: return "LEFT_LINE";
                 case 0xff: return "CROSS_LINE";
                 default: return "0x" + pattern.ToString("X");
             }
