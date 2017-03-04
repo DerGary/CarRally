@@ -130,6 +130,11 @@ int setHandleAngleWithMask(unsigned char mask);
 int setHandleAngle();
 int setHandleAngleFromResult(SensorInfo sensorResult);
 void handle(int angle);
+void traceTrack_default();
+void traceTrack_0();
+void traceTrack_2();
+void traceTrack_3();
+void traceTrack_4();
 /*======================================*/
 /* Global variable declarations         */
 /*======================================*/
@@ -589,6 +594,17 @@ int setHandleAngleFromResult(SensorInfo sensorResult){
 unsigned char alreadyInCurve = 0;
 void traceTrack()
 {
+	switch(CURRENT_OBSTACLE) {
+	case 0: traceTrack_0(); break;
+	case 2: traceTrack_2(); break;
+	case 3: traceTrack_3(); break; // slope
+	case 4: traceTrack_4(); break;
+	default: traceTrack_default(); break;
+	}
+}
+
+void traceTrack_default()
+{
 	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
 
 	unsigned char speedFactor = 100;
@@ -693,6 +709,435 @@ void traceTrack()
 	setSpeed(handleAngle, speedFactor);
 	cnt1 = 0;
 }
+
+void traceTrack_0()
+{
+	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
+
+	unsigned char speedFactor = 100;
+	if (cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE])
+	{
+		speedFactor = 100;
+	}
+	else
+	{
+		speedFactor = SPEED_FACTOR;
+	}
+
+	if (slopedown == 1)
+	{
+		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
+		if (cnt0 > 1500)
+		{
+			slopedown = 0;
+		}
+	}
+
+	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	{
+		if (slopeup == 0 && cnt0 > 100)
+		{
+			slopeup = 1;
+			cnt0 = 0;
+		}
+		else if (slopeup == 1 && ontop == 1)
+		{
+			slopedown = 1;
+			ontop = 0;
+			slopeup = 0;
+		}
+	}
+	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
+	{
+		ontop = 1;
+	}
+	else if (maskedSensorResult.Byte == 0x00)
+	{
+		if (cnt1 > 1000)
+		{
+			// after 1 second stop, you wont find the track again ;)
+			motor(0, 0);
+			state.Pattern = WAIT_FOR_LOST_TRACK;
+			return;
+		}
+		// lost track => steer more in the current direction until the track is found again
+		// and slow down to prevent crashing into things
+
+//		int handleAngle = 45*trackPosition;
+//		handleAngle = interpolateAngle(handleAngle);
+
+		int handleAngle = previousHandleAngle;
+
+		if (abs(handleAngle) > 45) handleAngle = 45 * trackPosition;
+
+		if (state.TraceMask == LEFT_MASK) state.TraceMask = MASK4_0;
+		else if (state.TraceMask == RIGHT_MASK) state.TraceMask = MASK0_4;
+
+		handle(handleAngle);
+		setSpeed(handleAngle, 40);
+		return;
+	}
+	int handleAngle = setHandleAngleFromResult(maskedSensorResult);
+
+	// to set the mask we must check the masked result because an unmasked result would
+	// return a wrong angle or zero if the 2 outer most sensors are active which would
+	// reset the mask.
+
+	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+	{
+		cntx = 0;
+		alreadyInCurve = 1;
+	}
+	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+	{
+		cnty = 0;
+	}
+	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
+	{
+		alreadyInCurve = 0;
+	}
+
+
+	if (abs(handleAngle) < 5)
+	{
+		state.TraceMask = NORMAL_MASK;
+	}
+	else if (handleAngle < 0)
+	{
+		state.TraceMask = LEFT_MASK;
+		trackPosition = LEFT;
+	}
+	else if (handleAngle > 0)
+	{
+		state.TraceMask = RIGHT_MASK;
+		trackPosition = RIGHT;
+	}
+
+	setSpeed(handleAngle, speedFactor);
+	cnt1 = 0;
+}
+
+void traceTrack_2()
+{
+	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
+
+	unsigned char speedFactor = 100;
+	if (cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE])
+	{
+		speedFactor = 100;
+	}
+	else
+	{
+		speedFactor = SPEED_FACTOR;
+	}
+
+	if (slopedown == 1)
+	{
+		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
+		if (cnt0 > 1500)
+		{
+			slopedown = 0;
+		}
+	}
+
+	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	{
+		if (slopeup == 0 && cnt0 > 100)
+		{
+			slopeup = 1;
+			cnt0 = 0;
+		}
+		else if (slopeup == 1 && ontop == 1)
+		{
+			slopedown = 1;
+			ontop = 0;
+			slopeup = 0;
+		}
+	}
+	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
+	{
+		ontop = 1;
+	}
+	else if (maskedSensorResult.Byte == 0x00)
+	{
+		if (cnt1 > 1000)
+		{
+			// after 1 second stop, you wont find the track again ;)
+			motor(0, 0);
+			state.Pattern = WAIT_FOR_LOST_TRACK;
+			return;
+		}
+		// lost track => steer more in the current direction until the track is found again
+		// and slow down to prevent crashing into things
+
+//		int handleAngle = 45*trackPosition;
+//		handleAngle = interpolateAngle(handleAngle);
+
+		int handleAngle = previousHandleAngle;
+
+		if (abs(handleAngle) > 45) handleAngle = 45 * trackPosition;
+
+		if (state.TraceMask == LEFT_MASK) state.TraceMask = MASK4_0;
+		else if (state.TraceMask == RIGHT_MASK) state.TraceMask = MASK0_4;
+
+		handle(handleAngle);
+		setSpeed(handleAngle, 40);
+		return;
+	}
+	int handleAngle = setHandleAngleFromResult(maskedSensorResult);
+
+	// to set the mask we must check the masked result because an unmasked result would
+	// return a wrong angle or zero if the 2 outer most sensors are active which would
+	// reset the mask.
+
+	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+	{
+		cntx = 0;
+		alreadyInCurve = 1;
+	}
+	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+	{
+		cnty = 0;
+	}
+	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
+	{
+		alreadyInCurve = 0;
+	}
+
+
+	if (abs(handleAngle) < 5)
+	{
+		state.TraceMask = NORMAL_MASK;
+	}
+	else if (handleAngle < 0)
+	{
+		state.TraceMask = LEFT_MASK;
+		trackPosition = LEFT;
+	}
+	else if (handleAngle > 0)
+	{
+		state.TraceMask = RIGHT_MASK;
+		trackPosition = RIGHT;
+	}
+
+	setSpeed(handleAngle, speedFactor);
+	cnt1 = 0;
+}
+
+void traceTrack_3()
+{
+	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
+
+	unsigned char speedFactor = 100;
+	if (cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE])
+	{
+		speedFactor = 100;
+	}
+	else
+	{
+		speedFactor = SPEED_FACTOR;
+	}
+
+	if (slopedown == 1)
+	{
+		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
+		if (cnt0 > 1500)
+		{
+			slopedown = 0;
+		}
+	}
+
+	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	{
+		if (slopeup == 0 && cnt0 > 100)
+		{
+			slopeup = 1;
+			cnt0 = 0;
+		}
+		else if (slopeup == 1 && ontop == 1)
+		{
+			slopedown = 1;
+			ontop = 0;
+			slopeup = 0;
+		}
+	}
+	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
+	{
+		ontop = 1;
+	}
+	else if (maskedSensorResult.Byte == 0x00)
+	{
+		if (cnt1 > 1000)
+		{
+			// after 1 second stop, you wont find the track again ;)
+			motor(0, 0);
+			state.Pattern = WAIT_FOR_LOST_TRACK;
+			return;
+		}
+		// lost track => steer more in the current direction until the track is found again
+		// and slow down to prevent crashing into things
+
+//		int handleAngle = 45*trackPosition;
+//		handleAngle = interpolateAngle(handleAngle);
+
+		int handleAngle = previousHandleAngle;
+
+		if (abs(handleAngle) > 45) handleAngle = 45 * trackPosition;
+
+		if (state.TraceMask == LEFT_MASK) state.TraceMask = MASK4_0;
+		else if (state.TraceMask == RIGHT_MASK) state.TraceMask = MASK0_4;
+
+		handle(handleAngle);
+		setSpeed(handleAngle, 40);
+		return;
+	}
+	int handleAngle = setHandleAngleFromResult(maskedSensorResult);
+
+	// to set the mask we must check the masked result because an unmasked result would
+	// return a wrong angle or zero if the 2 outer most sensors are active which would
+	// reset the mask.
+
+	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+	{
+		cntx = 0;
+		alreadyInCurve = 1;
+	}
+	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+	{
+		cnty = 0;
+	}
+	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
+	{
+		alreadyInCurve = 0;
+	}
+
+
+	if (abs(handleAngle) < 5)
+	{
+		state.TraceMask = NORMAL_MASK;
+	}
+	else if (handleAngle < 0)
+	{
+		state.TraceMask = LEFT_MASK;
+		trackPosition = LEFT;
+	}
+	else if (handleAngle > 0)
+	{
+		state.TraceMask = RIGHT_MASK;
+		trackPosition = RIGHT;
+	}
+
+	setSpeed(handleAngle, speedFactor);
+	cnt1 = 0;
+}
+
+void traceTrack_4()
+{
+	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
+
+	unsigned char speedFactor = 100;
+	if (cnt2 < obstacleAccelerationTime[CURRENT_OBSTACLE])
+	{
+		speedFactor = 100;
+	}
+	else
+	{
+		speedFactor = SPEED_FACTOR;
+	}
+
+	if (slopedown == 1)
+	{
+		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
+		if (cnt0 > 1500)
+		{
+			slopedown = 0;
+		}
+	}
+
+	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	{
+		if (slopeup == 0 && cnt0 > 100)
+		{
+			slopeup = 1;
+			cnt0 = 0;
+		}
+		else if (slopeup == 1 && ontop == 1)
+		{
+			slopedown = 1;
+			ontop = 0;
+			slopeup = 0;
+		}
+	}
+	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
+	{
+		ontop = 1;
+	}
+	else if (maskedSensorResult.Byte == 0x00)
+	{
+		if (cnt1 > 1000)
+		{
+			// after 1 second stop, you wont find the track again ;)
+			motor(0, 0);
+			state.Pattern = WAIT_FOR_LOST_TRACK;
+			return;
+		}
+		// lost track => steer more in the current direction until the track is found again
+		// and slow down to prevent crashing into things
+
+//		int handleAngle = 45*trackPosition;
+//		handleAngle = interpolateAngle(handleAngle);
+
+		int handleAngle = previousHandleAngle;
+
+		if (abs(handleAngle) > 45) handleAngle = 45 * trackPosition;
+
+		if (state.TraceMask == LEFT_MASK) state.TraceMask = MASK4_0;
+		else if (state.TraceMask == RIGHT_MASK) state.TraceMask = MASK0_4;
+
+		handle(handleAngle);
+		setSpeed(handleAngle, 40);
+		return;
+	}
+	int handleAngle = setHandleAngleFromResult(maskedSensorResult);
+
+	// to set the mask we must check the masked result because an unmasked result would
+	// return a wrong angle or zero if the 2 outer most sensors are active which would
+	// reset the mask.
+
+	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+	{
+		cntx = 0;
+		alreadyInCurve = 1;
+	}
+	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+	{
+		cnty = 0;
+	}
+	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
+	{
+		alreadyInCurve = 0;
+	}
+
+
+	if (abs(handleAngle) < 5)
+	{
+		state.TraceMask = NORMAL_MASK;
+	}
+	else if (handleAngle < 0)
+	{
+		state.TraceMask = LEFT_MASK;
+		trackPosition = LEFT;
+	}
+	else if (handleAngle > 0)
+	{
+		state.TraceMask = RIGHT_MASK;
+		trackPosition = RIGHT;
+	}
+
+	setSpeed(handleAngle, speedFactor);
+	cnt1 = 0;
+}
+
 
 float previousAngle = 0;
 int interpolateAngle(int measurement){
