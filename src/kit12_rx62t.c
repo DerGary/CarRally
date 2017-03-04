@@ -13,7 +13,7 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 4
+#define CAR 5
 #define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
@@ -53,7 +53,7 @@
 	#define BREAKTIMES obstacleBreakTime4
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR 1
-	#define SPEED_FACTOR 70
+	#define SPEED_FACTOR 80
 #else
 	#error Unknown CAR
 #endif
@@ -182,7 +182,7 @@ int obstacleBreakTime4[TOTAL_OBSTACLES] = {0, 	0, 	300, 	150, 	100, 150, 200, 20
 int obstacleAccelerationTimeCar1[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
 int obstacleAccelerationTimeCar2[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
 int obstacleAccelerationTimeCar3[TOTAL_OBSTACLES] = { 0, 0, 0, 0, 0, 0, 0,0 };
-int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 400, 100, 600, 400, 700, 100, 300, 400};
+int obstacleAccelerationTimeCar4[TOTAL_OBSTACLES] = { 400, 100, 600, 500, 700, 100, 300, 400};
 
 int* obstacleDriveTime = DRIVETIMES;
 int* obstacleBreakTime = BREAKTIMES;
@@ -203,11 +203,7 @@ void handle(int steeringAngle){
 }
 
 void motor(int speedMotorLeft, int speedMotorRight){
-	if(cntx < 500){
-		setMotor(speedMotorLeft*0.3, speedMotorRight*0.3);
-	}else{
-		setMotor(speedMotorLeft, speedMotorRight);
-	}
+	setMotor(speedMotorLeft, speedMotorRight);
 	state.MotorLeft = speedMotorLeft;
 	state.MotorRight = speedMotorRight;
 }
@@ -617,34 +613,8 @@ void traceTrack_default()
 		speedFactor = SPEED_FACTOR;
 	}
 
-	if (slopedown == 1)
-	{
-		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if (cnt0 > 1500)
-		{
-			slopedown = 0;
-		}
-	}
 
-	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
-	{
-		if (slopeup == 0 && cnt0 > 100)
-		{
-			slopeup = 1;
-			cnt0 = 0;
-		}
-		else if (slopeup == 1 && ontop == 1)
-		{
-			slopedown = 1;
-			ontop = 0;
-			slopeup = 0;
-		}
-	}
-	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
-	{
-		ontop = 1;
-	}
-	else if (maskedSensorResult.Byte == 0x00)
+	if (maskedSensorResult.Byte == 0x00)
 	{
 		if (cnt1 > 1000)
 		{
@@ -655,9 +625,6 @@ void traceTrack_default()
 		}
 		// lost track => steer more in the current direction until the track is found again
 		// and slow down to prevent crashing into things
-
-//		int handleAngle = 45*trackPosition;
-//		handleAngle = interpolateAngle(handleAngle);
 
 		int handleAngle = previousHandleAngle;
 
@@ -675,21 +642,6 @@ void traceTrack_default()
 	// to set the mask we must check the masked result because an unmasked result would
 	// return a wrong angle or zero if the 2 outer most sensors are active which would
 	// reset the mask.
-
-	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
-	{
-		cntx = 0;
-		alreadyInCurve = 1;
-	}
-	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
-	{
-		cnty = 0;
-	}
-	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
-	{
-		alreadyInCurve = 0;
-	}
-
 
 	if (abs(handleAngle) < 5)
 	{
@@ -708,6 +660,7 @@ void traceTrack_default()
 
 	setSpeed(handleAngle, speedFactor);
 	cnt1 = 0;
+	slopeup = 0;
 }
 
 void traceTrack_0()
@@ -724,34 +677,12 @@ void traceTrack_0()
 		speedFactor = SPEED_FACTOR;
 	}
 
-	if (slopedown == 1)
+	if(cntx < 350)
 	{
-		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if (cnt0 > 1500)
-		{
-			slopedown = 0;
-		}
+		speedFactor = speedFactor*0.3;
 	}
 
-	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
-	{
-		if (slopeup == 0 && cnt0 > 100)
-		{
-			slopeup = 1;
-			cnt0 = 0;
-		}
-		else if (slopeup == 1 && ontop == 1)
-		{
-			slopedown = 1;
-			ontop = 0;
-			slopeup = 0;
-		}
-	}
-	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
-	{
-		ontop = 1;
-	}
-	else if (maskedSensorResult.Byte == 0x00)
+	if (maskedSensorResult.Byte == 0x00)
 	{
 		if (cnt1 > 1000)
 		{
@@ -796,6 +727,7 @@ void traceTrack_0()
 	{
 		alreadyInCurve = 0;
 	}
+
 
 
 	if (abs(handleAngle) < 5)
@@ -831,34 +763,12 @@ void traceTrack_2()
 		speedFactor = SPEED_FACTOR;
 	}
 
-	if (slopedown == 1)
+	if(cntx < 250)
 	{
-		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if (cnt0 > 1500)
-		{
-			slopedown = 0;
-		}
+		speedFactor = speedFactor*0.4;
 	}
 
-	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
-	{
-		if (slopeup == 0 && cnt0 > 100)
-		{
-			slopeup = 1;
-			cnt0 = 0;
-		}
-		else if (slopeup == 1 && ontop == 1)
-		{
-			slopedown = 1;
-			ontop = 0;
-			slopeup = 0;
-		}
-	}
-	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
-	{
-		ontop = 1;
-	}
-	else if (maskedSensorResult.Byte == 0x00)
+	if (maskedSensorResult.Byte == 0x00)
 	{
 		if (cnt1 > 1000)
 		{
@@ -938,30 +848,32 @@ void traceTrack_3()
 		speedFactor = SPEED_FACTOR;
 	}
 
+	if(slopeup == 2){
+		speedFactor = 75;
+	}
+
+
 	if (slopedown == 1)
 	{
 		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if (cnt0 > 1500)
+		if (cnt0 > 1700)
 		{
 			slopedown = 0;
 		}
 	}
 
-	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
+	if (state.Sensor.Byte == 0x00 && slopeup == 0 && cnt0 > 100)
 	{
-		if (slopeup == 0 && cnt0 > 100)
-		{
-			slopeup = 1;
-			cnt0 = 0;
-		}
-		else if (slopeup == 1 && ontop == 1)
-		{
-			slopedown = 1;
-			ontop = 0;
-			slopeup = 0;
-		}
+		slopeup = 1;
+		cnt0 = 0;
 	}
-	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
+	else if (state.Sensor.Byte == 0x00 && slopeup == 1 && ontop == 1)
+	{
+		slopedown = 1;
+		ontop = 0;
+		slopeup = 2;
+	}
+	else if (state.Sensor.Byte != 0x00 && slopeup == 1)
 	{
 		ontop = 1;
 	}
@@ -996,21 +908,50 @@ void traceTrack_3()
 	// to set the mask we must check the masked result because an unmasked result would
 	// return a wrong angle or zero if the 2 outer most sensors are active which would
 	// reset the mask.
-
-	if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
-	{
-		cntx = 0;
-		alreadyInCurve = 1;
+	if(slopeup == 0){
+		//dont break for curve before slope
+		if (abs(handleAngle) > 28 && alreadyInCurve == 0 && cnt2 > 500)
+		{
+			cntx = 0;
+			alreadyInCurve = 1;
+		}
+		else if (abs(handleAngle) > 28 && alreadyInCurve == 1)
+		{
+			cnty = 0;
+		}
+		else if (abs(handleAngle) < 28 && alreadyInCurve == 1 && cnty > 600)
+		{
+			alreadyInCurve = 0;
+		}
+		if(cntx < 250)
+		{
+			speedFactor = SPEED_FACTOR*0.4;
+		}
+		else
+		{
+			speedFactor = 100;
+		}
 	}
-	else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
-	{
-		cnty = 0;
+	if(slopeup == 2){
+		//dont break for curve before slope
+		if (abs(handleAngle) > 15 && alreadyInCurve == 0 && cnt2 > 500)
+		{
+			cntx = 0;
+			alreadyInCurve = 1;
+		}
+		else if (abs(handleAngle) > 15 && alreadyInCurve == 1)
+		{
+			cnty = 0;
+		}
+		else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 400)
+		{
+			alreadyInCurve = 0;
+		}
+		if(cntx < 300)
+		{
+			speedFactor = speedFactor*0.4;
+		}
 	}
-	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
-	{
-		alreadyInCurve = 0;
-	}
-
 
 	if (abs(handleAngle) < 5)
 	{
@@ -1030,7 +971,7 @@ void traceTrack_3()
 	setSpeed(handleAngle, speedFactor);
 	cnt1 = 0;
 }
-
+char curveCount = 0;
 void traceTrack_4()
 {
 	SensorInfo maskedSensorResult = maskSensorInfo(state.Sensor, state.TraceMask);
@@ -1044,35 +985,21 @@ void traceTrack_4()
 	{
 		speedFactor = SPEED_FACTOR;
 	}
-
-	if (slopedown == 1)
-	{
-		speedFactor = SLOPE_DOWN_SPEED_FACTOR;
-		if (cnt0 > 1500)
+	if(curveCount == 0){
+		if(cntx < 300)
 		{
-			slopedown = 0;
+			speedFactor = speedFactor*0.4;
+		}
+	}else if(curveCount == 1){
+		if(cntx < 600)
+		{
+			speedFactor = speedFactor*0.25;
+		}else{
+			curveCount == 0;
 		}
 	}
 
-	if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte == 0x00)
-	{
-		if (slopeup == 0 && cnt0 > 100)
-		{
-			slopeup = 1;
-			cnt0 = 0;
-		}
-		else if (slopeup == 1 && ontop == 1)
-		{
-			slopedown = 1;
-			ontop = 0;
-			slopeup = 0;
-		}
-	}
-	else if (CURRENT_OBSTACLE == 3 && state.Sensor.Byte != 0x00 && slopeup == 1)
-	{
-		ontop = 1;
-	}
-	else if (maskedSensorResult.Byte == 0x00)
+	if (maskedSensorResult.Byte == 0x00)
 	{
 		if (cnt1 > 1000)
 		{
@@ -1116,6 +1043,7 @@ void traceTrack_4()
 	else if (abs(handleAngle) < 15 && alreadyInCurve == 1 && cnty > 600)
 	{
 		alreadyInCurve = 0;
+		curveCount = 1;
 	}
 
 
@@ -1157,7 +1085,7 @@ int interpolateAngle(int measurement){
 
 int getSteeringAngle(SensorInfo sensorInfoResult)
 {
-	static int steeringTable[] = { 0, 3, 8, 12, 28, 36, 45, 55 };
+	static int steeringTable[] = { 0, 3, 8, 12, 28, 34, 40, 48 };
 
 	int sensorResult = sensorInfoResult.Byte;
 	if (sensorResult == 0)
