@@ -167,7 +167,7 @@ int obstacleCounter = 0;
 #define LANE_SWITCH_HANDLE_ANGLE 33
 #define LANE_SWITCH_SPEED 20
 #define ANGLE_SPEED_FACTOR 0.15f
-#define SLOPE_DOWN_SPEED_FACTOR 50
+#define SLOPE_DOWN_SPEED_FACTOR 55
 #define OBSTACLE_DRIVE_SPEED SPEED_FACTOR
 
 //LSR LSL 90° 90° 90° 90° 90° 90°
@@ -217,6 +217,15 @@ void emergencyExit(void)
 		state.Pattern = WAIT_FOR_LOST_TRACK;
 	}
 }
+void increaseObstacleCounter(){
+	obstacleCounter++;
+	led_out_m(CURRENT_OBSTACLE);
+}
+
+void increaseObstacleCounterByButton(){
+	increaseObstacleCounter();
+	timer(200);
+}
 
 //TODO:
 //Schrauben festziehen (Motor/Reifen)
@@ -228,7 +237,7 @@ void emergencyExit(void)
 //Frische Batterien
 //Ausrichtung vom Sensorboard / Servo
 //Klappe einprogrammieren
-//
+//Slope überprüfen ob das mit den LEDs passt
 
 
 
@@ -291,6 +300,9 @@ void main(void)
 					cnt2 = 0;
 					break;
 				}
+				if(buttonsw_get()){
+					increaseObstacleCounterByButton();
+				}
 				if (cnt1 < 100)
 				{ /* LED flashing processing     */
 					led_out(0x1);
@@ -315,6 +327,9 @@ void main(void)
 					cnt2 = 0;
 					break;
 				}
+				if(buttonsw_get()){
+					increaseObstacleCounterByButton();
+				}
 				if (cnt1 < 50)
 				{ /* LED flashing processing     */
 					led_out(0x1);
@@ -337,6 +352,9 @@ void main(void)
 				if (pushsw_get())
 				{
 					sendDebugBuffer();
+				}
+				if(buttonsw_get()){
+					increaseObstacleCounterByButton();
 				}
 				break;
 			}
@@ -398,6 +416,7 @@ void main(void)
 				break;
 			case CROSS_LINE:
 			{
+//				LED_strip_set_rgb(0, 0, 255);
 				// we wait 200 ms to ignore the second cross line which can not be detected when
 				// the car is really fast so we just ignore it.
 				if (maskSensorInfo(state.Sensor, MASK4_0).Byte == LEFT_LINE_4 && cnt1 > 100)
@@ -468,7 +487,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = LEFT_MASK;
 					cnt2 = 0;
-					obstacleCounter++;
+					increaseObstacleCounter();
 				}
 				DBG();
 				break;
@@ -494,7 +513,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
-					obstacleCounter++;
+					increaseObstacleCounter();
 				}
 				DBG();
 				break;
@@ -574,7 +593,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = RIGHT_MASK;
 					cnt2 = 0;
-					obstacleCounter++;
+					increaseObstacleCounter();
 				}
 				DBG();
 				break;
@@ -596,7 +615,7 @@ void main(void)
 					state.Pattern = NORMAL_TRACE;
 					state.TraceMask = LEFT_MASK;
 					cnt2 = 0;
-					obstacleCounter++;
+					increaseObstacleCounter();
 				}
 				DBG();
 				break;
@@ -891,7 +910,7 @@ void traceTrack_3()
 	}
 
 	if(slopeup == 2){
-		speedFactor = 75;
+		speedFactor = 76;
 	}
 
 
@@ -1028,12 +1047,12 @@ void traceTrack_4()
 		speedFactor = SPEED_FACTOR;
 	}
 	if(curveCount == 0){
-		if(cntx < 300)
+		if(cntx < 200)
 		{
 			speedFactor = speedFactor*0.4;
 		}
 	}else if(curveCount == 1){
-		if(cntx < 600)
+		if(cntx < 300)
 		{
 			speedFactor = speedFactor*0.25;
 		}else{
