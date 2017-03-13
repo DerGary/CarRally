@@ -13,7 +13,7 @@
  * Motor drive board Ver. 5
  */
 
-#define CAR 5
+#define CAR 4
 #define SERVO_CENTER_CAR_1 2406
 #define SERVO_CENTER_CAR_2 2291
 #define SERVO_CENTER_CAR_3 2321
@@ -47,6 +47,8 @@
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR -1
 	#define SPEED_FACTOR 80
+	#define CURVE1TIME 500
+	#define CURVE2TIME 600
 #elif CAR == 5
 	#define SERVO_CENTER    SERVO_CENTER_CAR_5          /* Servo center value          */
 	#define DRIVETIMES obstacleDriveTime4
@@ -54,6 +56,8 @@
 	#define ACCELERATIONTIMES obstacleAccelerationTimeCar4
 	#define HANDLE_FACTOR 1
 	#define SPEED_FACTOR 80
+	#define CURVE1TIME 200
+	#define CURVE2TIME 300
 #else
 	#error Unknown CAR
 #endif
@@ -238,7 +242,7 @@ void increaseObstacleCounterByButton(){
 //Ausrichtung vom Sensorboard / Servo
 //Klappe einprogrammieren
 //Slope überprüfen ob das mit den LEDs passt
-
+//Debug deaktivieren
 
 
 /***********************************************************************/
@@ -1047,12 +1051,12 @@ void traceTrack_4()
 		speedFactor = SPEED_FACTOR;
 	}
 	if(curveCount == 0){
-		if(cntx < 200)
+		if(cntx < CURVE1TIME)
 		{
 			speedFactor = speedFactor*0.4;
 		}
 	}else if(curveCount == 1){
-		if(cntx < 300)
+		if(cntx < CURVE2TIME)
 		{
 			speedFactor = speedFactor*0.25;
 		}else{
